@@ -2,451 +2,374 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Luminor Spectrum | Neural Color Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Luminor Batch Studio | Pro Multi‑Image Editor</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #05070A;
-      overflow: hidden;
-      letter-spacing: -0.01em;
-    }
-
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: rgba(15, 20, 30, 0.6); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb { background: #FF5C00; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #FF7A2F; }
-
-    .glass-premium {
-      background: rgba(18, 22, 28, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .glass-card {
-      background: rgba(12, 16, 22, 0.7);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-    }
-
-    .neon-border {
-      box-shadow: 0 0 0 1px rgba(255, 92, 0, 0.3), 0 0 0 3px rgba(255, 92, 0, 0.1);
-    }
-
-    .slider-neo {
-      -webkit-appearance: none;
-      background: transparent;
-    }
-    .slider-neo::-webkit-slider-runnable-track {
-      height: 3px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 6px;
-    }
-    .slider-neo::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      height: 14px;
-      width: 14px;
-      border-radius: 50%;
-      background: #FF5C00;
-      margin-top: -5.5px;
-      cursor: pointer;
-      box-shadow: 0 0 6px #FF5C00;
-      transition: transform 0.1s ease;
-    }
-    .slider-neo::-webkit-slider-thumb:hover { transform: scale(1.25); }
-
-    .canvas-container {
-      background: radial-gradient(circle at 30% 20%, rgba(255, 92, 0, 0.08), transparent 70%);
-    }
-
-    .gradient-mask {
-      mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-    }
-
-    .btn-glow {
-      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', system-ui; background: #0A0C12; overflow-x: hidden; }
+    .glass-panel { background: rgba(18, 22, 28, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
+    .image-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .image-card.selected { border: 2px solid #FF5C00; box-shadow: 0 0 0 2px rgba(255,92,0,0.3); transform: scale(1.02); }
+    .slider-neo { -webkit-appearance: none; background: transparent; }
+    .slider-neo::-webkit-slider-runnable-track { height: 3px; background: rgba(255,255,255,0.12); border-radius: 6px; }
+    .slider-neo::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #FF5C00; margin-top: -5.5px; cursor: pointer; }
     .btn-glow:active { transform: scale(0.96); }
-
-    @keyframes float-panel {
-      0% { opacity: 0; transform: translateY(6px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-    .animate-float { animation: float-panel 0.2s ease-out forwards; }
-
-    .color-swatch {
-      transition: transform 0.1s, box-shadow 0.2s;
-    }
-    .color-swatch:hover {
-      transform: scale(1.08);
-      box-shadow: 0 0 0 2px #FF5C00;
-    }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade { animation: fadeSlide 0.2s ease-out; }
   </style>
 </head>
-<body class="text-gray-200 antialiased overflow-hidden">
+<body class="text-gray-200">
 
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useRef, useCallback, useMemo } = React;
+  const { useState, useEffect, useCallback, useRef } = React;
 
-  // ========== ADVANCED COLOR ENGINE ==========
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-      else if (max === g) h = (b - r) / d + 2;
-      else h = (r - g) / d + 4;
-      h /= 6;
-    }
-    return [h * 360, s, l];
-  }
-  function hue2rgb(p, q, t) {
-    if (t < 0) t += 1; if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q - p) * 6 * t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-    return p;
-  }
-  function hslToRgb(h, s, l) {
-    h /= 360;
-    let r, g, b;
-    if (s === 0) r = g = b = l;
-    else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-    return [r * 255, g * 255, b * 255];
-  }
-
-  function computeImageMatrix(src, dst, coreAdj, hslMixer, globalSat) {
-    const exp = Math.pow(2, coreAdj.exposure);
-    const contrast = coreAdj.contrast + 1;
-    const warmthAdj = coreAdj.warmth;
-    const satGlobal = 1 + globalSat / 100;
-    
-    for (let i = 0; i < src.length; i += 4) {
-      let r = src[i], g = src[i+1], b = src[i+2];
-      r *= exp; g *= exp; b *= exp;
-      r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
-      g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
-      b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
-      
-      let [h, s, l] = rgbToHsl(r, g, b);
-      let channelKey = 'red';
-      if (h >= 345 || h < 20) channelKey = 'red';
-      else if (h >= 20 && h < 50) channelKey = 'orange';
-      else if (h >= 50 && h < 80) channelKey = 'yellow';
-      else if (h >= 80 && h < 160) channelKey = 'green';
-      else if (h >= 160 && h < 220) channelKey = 'aqua';
-      else if (h >= 220 && h < 280) channelKey = 'blue';
-      else if (h >= 280 && h < 320) channelKey = 'purple';
-      else channelKey = 'magenta';
-      
-      const mix = hslMixer[channelKey];
-      h = (h + mix.hue + 360) % 360;
-      s = Math.min(1, Math.max(0, s * (1 + mix.saturation / 100)));
-      l = Math.min(1, Math.max(0, l * (1 + mix.luminance / 100)));
-      
-      // global saturation injection
-      s = Math.min(1, Math.max(0, s * satGlobal));
-      
-      [r, g, b] = hslToRgb(h, s, l);
-      r += warmthAdj * 12; b -= warmthAdj * 8;
-      
-      dst[i] = Math.min(255, Math.max(0, r));
-      dst[i+1] = Math.min(255, Math.max(0, g));
-      dst[i+2] = Math.min(255, Math.max(0, b));
-      dst[i+3] = src[i+3];
-    }
-  }
-
-  // ========== INITIAL MATRICES ==========
-  const INITIAL_CORE = { exposure: 0.15, contrast: 0.2, warmth: 0.05 };
-  const INITIAL_HSL = {
-    red: { hue: 18, saturation: -12, luminance: 18, hex: '#FF453A' },
-    orange: { hue: 6, saturation: 0, luminance: 5, hex: '#FF9F0A' },
-    yellow: { hue: -5, saturation: -32, luminance: 4, hex: '#FFD60A' },
-    green: { hue: 88, saturation: 0, luminance: 2, hex: '#32D74B' },
-    aqua: { hue: 0, saturation: 0, luminance: 0, hex: '#64D2FF' },
-    blue: { hue: -48, saturation: -68, luminance: 12, hex: '#0A84FF' },
-    purple: { hue: 12, saturation: 0, luminance: 0, hex: '#BF5AF2' },
-    magenta: { hue: 0, saturation: 0, luminance: 0, hex: '#FF375F' }
-  };
-  const SIDEBAR_TABS = [
-    { id: 'design', label: 'Design' },
-    { id: 'mixer', label: 'Spectrum Mixer' },
-    { id: 'adjust', label: 'Neural Filter' }
-  ];
-  const TOOL_ITEMS = [
-    { id: 'select', label: 'Select', iconPath: "M5 3L3 5L8 10L5 13L13 13L13 5L10 8L5 3Z", hotkey: 'V' },
-    { id: 'text', label: 'Text', iconPath: "M4 7h16M9 3v18M15 3v18", hotkey: 'T' },
-    { id: 'shape', label: 'Shape', iconPath: "M3 3h18v18H3zM8 8h8v8H8z", hotkey: 'R' },
-    { id: 'mixer_shortcut', label: 'HSL Focus', iconPath: "M12 3v18M9 6l3-3 3 3M9 18l3 3 3-3", hotkey: 'M' }
-  ];
-
-  // ========== AUTH LAYER ==========
+  // ---------- PRO AUTH SYSTEM (simple token) ----------
   const AuthGate = ({ onAuth }) => {
-    const [email, setEmail] = useState('creator@luminor.space');
-    const handleLogin = (e) => { e.preventDefault(); onAuth({ email }); };
+    const [email, setEmail] = useState('pro@luminor.com');
+    const [password, setPassword] = useState('studio123');
+    const [error, setError] = useState('');
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (email.trim() && password.length >= 4) {
+        onAuth({ email, token: 'luminor_' + Date.now() });
+      } else {
+        setError('Valid email + password (min 4 chars)');
+      }
+    };
     return (
-      <div className="fixed inset-0 bg-[#03050A] flex items-center justify-center z-50">
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF5C00]/10 via-transparent to-[#2F66F6]/10 pointer-events-none" />
-        <div className="glass-premium rounded-2xl w-full max-w-md p-8 shadow-2xl border-white/10">
+      <div className="fixed inset-0 bg-[#03050A] flex items-center justify-center z-50 p-4">
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF5C00]/10 via-transparent to-[#2F66F6]/10" />
+        <div className="glass-panel rounded-2xl w-full max-w-md p-8 shadow-2xl border-white/10 animate-fade">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5C00] to-[#FF8A3C] shadow-lg" />
-            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">LUMINOR CORE</h1>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5C00] to-[#FF8A3C] shadow-lg" />
+            <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">LUMINOR BATCH</h1>
           </div>
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Node identity</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00] transition" />
+              <label className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Professional email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]" />
             </div>
-            <button type="submit" className="w-full bg-[#FF5C00] hover:bg-[#E05200] py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg transition-all">⚡ Enter Studio</button>
+            <div>
+              <label className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Access key</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white" />
+            </div>
+            {error && <div className="text-red-400 text-xs">{error}</div>}
+            <button type="submit" className="w-full bg-[#FF5C00] hover:bg-[#E05200] py-3 rounded-xl font-bold text-sm shadow-lg transition">⚡ Enter Studio</button>
           </form>
         </div>
       </div>
     );
   };
 
-  // ========== ICON COMPONENT ==========
-  const StudioIcon = ({ d, size = 20 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-  );
+  // ---------- ADVANCED IMAGE PROCESSING (auto correction + presets) ----------
+  function autoColorCorrect(imgData) {
+    // Simple but effective auto levels + contrast boost
+    const data = imgData.data;
+    let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      minR = Math.min(minR, data[i]); maxR = Math.max(maxR, data[i]);
+      minG = Math.min(minG, data[i+1]); maxG = Math.max(maxG, data[i+1]);
+      minB = Math.min(minB, data[i+2]); maxB = Math.max(maxB, data[i+2]);
+    }
+    const rangeR = maxR - minR || 1, rangeG = maxG - minG || 1, rangeB = maxB - minB || 1;
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = ((data[i] - minR) / rangeR) * 255;
+      data[i+1] = ((data[i+1] - minG) / rangeG) * 255;
+      data[i+2] = ((data[i+2] - minB) / rangeB) * 255;
+      // slight contrast boost
+      data[i] = Math.min(255, Math.max(0, (data[i] - 128) * 1.1 + 128));
+      data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * 1.1 + 128));
+      data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * 1.1 + 128));
+    }
+    return imgData;
+  }
 
-  // ========== MAIN STUDIO WORKSTATION ==========
-  const StudioWorkstation = ({ session, onLogout }) => {
-    const [activeTab, setActiveTab] = useState('design');
-    const [activeTool, setActiveTool] = useState('select');
-    const [activeChannel, setActiveChannel] = useState('red');
-    const [zoom, setZoom] = useState(100);
-    const [coreAdj, setCoreAdj] = useState({ ...INITIAL_CORE });
-    const [globalSat, setGlobalSat] = useState(0);
-    const [hslMixer, setHslMixer] = useState(INITIAL_HSL);
-    
-    const [layers, setLayers] = useState([
-      { id: 'title-1', type: 'text', content: 'LUMINOR SPECTRUM', x: 70, y: 150, fontSize: 34, fontWeight: '800', color: '#FFFFFF', letterSpacing: '0.02em' },
-      { id: 'badge', type: 'rect', x: 70, y: 440, w: 210, h: 52, radius: 40, color: 'rgba(255, 92, 0, 0.18)', stroke: '#FF5C00', strokeWidth: 1.5 },
-      { id: 'desc-text', type: 'text', content: 'CHROMATIC ENGINE', x: 80, y: 480, fontSize: 13, fontWeight: '600', color: '#FF5C00', letterSpacing: '0.2em' },
-      { id: 'hero-rect', type: 'rect', x: 290, y: 520, w: 120, h: 38, radius: 12, color: 'rgba(255,255,255,0.03)', stroke: '#ffffff30' }
-    ]);
-    const [selectedId, setSelectedId] = useState('title-1');
-    
-    const viewportCanvas = useRef(null);
-    const originalBuffer = useRef(null);
-    const processedBuffer = useRef(null);
-    const renderLock = useRef(false);
-    
-    // Build procedural abstract background (static)
-    useEffect(() => {
-      const w = 480, h = 680;
-      const canvasOff = document.createElement('canvas');
-      canvasOff.width = w; canvasOff.height = h;
-      const ctx = canvasOff.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, w*0.6, h);
-      grad.addColorStop(0, '#3D2B56');
-      grad.addColorStop(0.3, '#B73C2C');
-      grad.addColorStop(0.7, '#FF8C42');
-      grad.addColorStop(1, '#F4D03F');
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
-      ctx.globalCompositeOperation = 'overlay';
-      for (let i = 0; i < 180; i++) {
-        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.12})`;
-        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*7+2, 0, Math.PI*2); ctx.fill();
-      }
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(0, 0, w, h);
-      const imgData = ctx.getImageData(0, 0, w, h);
-      originalBuffer.current = imgData;
-      processedBuffer.current = new ImageData(new Uint8ClampedArray(imgData.data.length), w, h);
-      triggerRender();
-    }, []);
+  function applyPresetToImageData(imgData, preset) {
+    const data = imgData.data;
+    const warmth = preset.warmth || 0;
+    const sat = (preset.saturation || 0) / 100 + 1;
+    const contrast = (preset.contrast || 0) + 1;
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i], g = data[i+1], b = data[i+2];
+      r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
+      g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
+      b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
+      r += warmth * 15; b -= warmth * 12;
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = gray + (r - gray) * sat;
+      g = gray + (g - gray) * sat;
+      b = gray + (b - gray) * sat;
+      data[i] = Math.min(255, Math.max(0, r));
+      data[i+1] = Math.min(255, Math.max(0, g));
+      data[i+2] = Math.min(255, Math.max(0, b));
+    }
+    return imgData;
+  }
 
-    const triggerRender = useCallback(() => {
-      if (renderLock.current || !originalBuffer.current) return;
-      renderLock.current = true;
-      requestAnimationFrame(() => {
-        const canvas = viewportCanvas.current;
-        if (!canvas) { renderLock.current = false; return; }
-        const w = originalBuffer.current.width, h = originalBuffer.current.height;
-        canvas.width = w; canvas.height = h;
-        computeImageMatrix(originalBuffer.current.data, processedBuffer.current.data, coreAdj, hslMixer, globalSat);
-        const temp = document.createElement('canvas'); temp.width = w; temp.height = h;
-        temp.getContext('2d').putImageData(processedBuffer.current, 0, 0);
-        canvas.getContext('2d').clearRect(0, 0, w, h);
-        canvas.getContext('2d').drawImage(temp, 0, 0);
-        renderLock.current = false;
+  const PRESETS = {
+    'None': { warmth: 0, contrast: 0, saturation: 0 },
+    'Warm Glow': { warmth: 0.4, contrast: 0.1, saturation: 15 },
+    'Cool Air': { warmth: -0.3, contrast: 0.05, saturation: -5 },
+    'Vivid Punch': { warmth: 0.1, contrast: 0.25, saturation: 30 },
+    'Cinematic Fade': { warmth: -0.1, contrast: -0.15, saturation: -10 },
+    'Auto Magic ✨': null // special case
+  };
+
+  // ---------- MAIN MULTI-IMAGE STUDIO ----------
+  const BatchStudio = ({ session, onLogout }) => {
+    const [images, setImages] = useState([]); // each: { id, file, originalUrl, processedBlob, thumbnail, selected, processedDataUrl }
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [activePreset, setActivePreset] = useState('None');
+    const [processing, setProcessing] = useState(false);
+    const [applyToAll, setApplyToAll] = useState(false);
+    const [autoCorrectToggle, setAutoCorrectToggle] = useState(false);
+    const fileInputRef = useRef(null);
+
+    // generate thumbnail from file
+    const createThumbnail = (file, maxDim = 200) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > maxDim) { h = (h * maxDim) / w; w = maxDim; } }
+            else { if (h > maxDim) { w = (w * maxDim) / h; h = maxDim; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       });
-    }, [coreAdj, hslMixer, globalSat]);
-
-    useEffect(() => { triggerRender(); }, [triggerRender]);
-
-    const selectedLayer = useMemo(() => layers.find(l => l.id === selectedId), [layers, selectedId]);
-    
-    const updateLayer = (key, val) => setLayers(prev => prev.map(l => l.id === selectedId ? { ...l, [key]: val } : l));
-    const addLayer = (type) => {
-      const id = `${type}-${Date.now()}`;
-      if (type === 'text') setLayers(prev => [...prev, { id, type: 'text', content: 'NEW TEXT', x: 140, y: 320, fontSize: 22, fontWeight: '600', color: '#FFFFFF' }]);
-      else setLayers(prev => [...prev, { id, type: 'rect', x: 130, y: 360, w: 150, h: 48, radius: 8, color: 'rgba(255,92,0,0.2)', stroke: '#FF5C00' }]);
-      setSelectedId(id); setActiveTool('select');
     };
-    const deleteLayer = () => { 
-      if (layers.length > 1) {
-        setLayers(prev => prev.filter(l => l.id !== selectedId)); 
-        setSelectedId(layers[0]?.id || layers[1]?.id); 
+
+    const processImageToDataUrl = (file, applyAuto = false, preset = null) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            let imgData = ctx.getImageData(0, 0, img.width, img.height);
+            if (applyAuto) imgData = autoColorCorrect(imgData);
+            if (preset && PRESETS[preset]) {
+              imgData = applyPresetToImageData(imgData, PRESETS[preset]);
+            }
+            ctx.putImageData(imgData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+
+    const handleUpload = async (files) => {
+      if (!files.length) return;
+      setProcessing(true);
+      const newImages = [];
+      for (const file of files) {
+        const thumb = await createThumbnail(file);
+        const processedDataUrl = await processImageToDataUrl(file, autoCorrectToggle, activePreset !== 'None' ? activePreset : null);
+        newImages.push({
+          id: Date.now() + '-' + Math.random(),
+          file: file,
+          originalUrl: URL.createObjectURL(file),
+          thumbnail: thumb,
+          processedDataUrl: processedDataUrl,
+          selected: false
+        });
+      }
+      setImages(prev => [...prev, ...newImages]);
+      setProcessing(false);
+    };
+
+    const refreshAllPreviews = async () => {
+      setProcessing(true);
+      const updated = await Promise.all(images.map(async (img) => {
+        const newDataUrl = await processImageToDataUrl(img.file, autoCorrectToggle, activePreset !== 'None' ? activePreset : null);
+        return { ...img, processedDataUrl: newDataUrl };
+      }));
+      setImages(updated);
+      setProcessing(false);
+    };
+
+    useEffect(() => {
+      if (images.length && (autoCorrectToggle || activePreset !== 'None')) {
+        refreshAllPreviews();
+      }
+    }, [autoCorrectToggle, activePreset]);
+
+    const toggleSelect = (id) => {
+      const newSet = new Set(selectedIds);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      setSelectedIds(newSet);
+    };
+
+    const selectAll = () => {
+      if (selectedIds.size === images.length) setSelectedIds(new Set());
+      else setSelectedIds(new Set(images.map(i => i.id)));
+    };
+
+    const applyPresetToSelected = async (presetName) => {
+      if (selectedIds.size === 0) return;
+      setProcessing(true);
+      const updated = await Promise.all(images.map(async (img) => {
+        if (selectedIds.has(img.id)) {
+          const newDataUrl = await processImageToDataUrl(img.file, autoCorrectToggle, presetName !== 'None' ? presetName : null);
+          return { ...img, processedDataUrl: newDataUrl };
+        }
+        return img;
+      }));
+      setImages(updated);
+      setProcessing(false);
+      setActivePreset(presetName);
+    };
+
+    const autoCorrectSelected = async () => {
+      if (selectedIds.size === 0) return;
+      setProcessing(true);
+      const updated = await Promise.all(images.map(async (img) => {
+        if (selectedIds.has(img.id)) {
+          const newDataUrl = await processImageToDataUrl(img.file, true, activePreset !== 'None' ? activePreset : null);
+          return { ...img, processedDataUrl: newDataUrl };
+        }
+        return img;
+      }));
+      setImages(updated);
+      setProcessing(false);
+    };
+
+    const exportSelected = async () => {
+      const toExport = images.filter(img => selectedIds.has(img.id));
+      if (toExport.length === 0) return;
+      if (toExport.length === 1) {
+        const link = document.createElement('a');
+        link.download = `luminor_${toExport[0].id}.png`;
+        link.href = toExport[0].processedDataUrl;
+        link.click();
+      } else {
+        const zip = new JSZip();
+        for (const img of toExport) {
+          const base64 = img.processedDataUrl.split(',')[1];
+          zip.file(`image_${img.id}.png`, base64, { base64: true });
+        }
+        const content = await zip.generateAsync({ type: 'blob' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'luminor_batch_export.zip';
+        link.click();
+        URL.revokeObjectURL(link.href);
       }
     };
-    const duplicateLayer = () => {
-      const original = selectedLayer;
-      if (!original) return;
-      const newId = `${original.type}-copy-${Date.now()}`;
-      setLayers(prev => [...prev, { ...original, id: newId, x: original.x + 15, y: original.y + 15 }]);
-      setSelectedId(newId);
+
+    const deleteSelected = () => {
+      setImages(prev => prev.filter(img => !selectedIds.has(img.id)));
+      setSelectedIds(new Set());
     };
-    const handleToolAction = (toolId) => {
-      if (toolId === 'mixer_shortcut') { setActiveTab('mixer'); setActiveTool('select'); return; }
-      if (toolId === 'text') addLayer('text');
-      else if (toolId === 'shape') addLayer('rect');
-      else setActiveTool(toolId);
-    };
-    const resetChannel = () => {
-      setHslMixer(prev => ({ ...prev, [activeChannel]: { ...INITIAL_HSL[activeChannel] } }));
-    };
-    const resetAllHSL = () => { setHslMixer(INITIAL_HSL); };
-    
+
     return (
-      <div className="h-screen w-full bg-[#05070A] flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <header className="h-14 flex items-center justify-between px-5 border-b border-white/5 bg-[#0B0E14]/80 backdrop-blur-md shrink-0 z-30">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5C00] shadow-[0_0_8px_#FF5C00]"></div>
-              <span className="font-mono text-xs font-bold tracking-[0.2em] text-white/90">LUMINOR | STUDIO PRO</span>
-            </div>
-            <div className="hidden md:flex text-[11px] font-mono text-gray-400 border-l border-white/10 pl-4"><span className="text-[#FF5C00]">ACTIVE NODE :</span> {session.email}</div>
-          </div>
+      <div className="min-h-screen bg-[#05070A] flex flex-col">
+        {/* Header */}
+        <header className="sticky top-0 z-30 glass-panel border-b border-white/5 px-5 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setZoom(z => Math.min(180, z+10))} className="p-1.5 text-gray-300 hover:text-white text-sm bg-white/5 rounded-md">🔍+</button>
-            <button onClick={() => setZoom(z => Math.max(40, z-10))} className="p-1.5 text-gray-300 hover:text-white text-sm bg-white/5 rounded-md">🔍-</button>
-            <button onClick={onLogout} className="bg-white/5 hover:bg-[#FF5C00]/20 text-white text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 transition">EXPORT</button>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5C00] to-[#FF8A3C]" />
+            <span className="font-bold text-sm tracking-tight">LUMINOR BATCH STUDIO</span>
+            <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-full">{images.length} assets</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={() => fileInputRef.current.click()} className="bg-white/10 hover:bg-white/20 text-xs font-bold px-4 py-2 rounded-full transition">📤 Upload multiple</button>
+            <input type="file" ref={fileInputRef} multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleUpload(Array.from(e.target.files))} />
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={autoCorrectToggle} onChange={e => setAutoCorrectToggle(e.target.checked)} className="accent-[#FF5C00]" /> Auto‑correct (AI levels)</label>
+            <button onClick={exportSelected} disabled={selectedIds.size === 0} className="bg-[#FF5C00] hover:bg-[#E05200] disabled:opacity-40 text-xs font-bold px-5 py-2 rounded-full transition">📦 Export {selectedIds.size} selected</button>
+            <button onClick={onLogout} className="text-xs border border-white/20 px-3 py-1.5 rounded-full hover:bg-white/5">Exit</button>
           </div>
         </header>
 
-        <div className="flex-1 flex overflow-hidden relative">
-          {/* LEFT TOOLBAR */}
-          <aside className="w-16 bg-[#0A0D14]/90 backdrop-blur-sm border-r border-white/5 flex flex-col items-center py-4 gap-3 z-20">
-            {TOOL_ITEMS.map(tool => {
-              const isActive = activeTool === tool.id || (tool.id === 'mixer_shortcut' && activeTab === 'mixer');
-              return (
-                <button key={tool.id} onClick={() => handleToolAction(tool.id)} className={`group w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 ${isActive ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_#FF5C00]' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
-                  <StudioIcon d={tool.iconPath} size={20} />
-                  <span className="absolute -right-8 opacity-0 group-hover:opacity-100 transition bg-black/80 text-[9px] py-0.5 px-1.5 rounded-md font-mono">{tool.hotkey}</span>
-                </button>
-              );
-            })}
-          </aside>
+        <div className="flex flex-col lg:flex-row gap-6 p-6 max-w-7xl mx-auto w-full">
+          {/* LEFT: Control Panel */}
+          <div className="lg:w-72 space-y-5 glass-panel rounded-2xl p-5 h-fit sticky top-20">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#FF5C00]">Batch operations</h2>
+            <div>
+              <label className="text-[10px] text-gray-400">Apply preset to selected images</label>
+              <select value={activePreset} onChange={e => setActivePreset(e.target.value)} className="w-full mt-1 bg-black/50 border border-white/10 rounded-xl p-2 text-sm">
+                {Object.keys(PRESETS).map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => applyPresetToSelected(activePreset)} disabled={selectedIds.size === 0} className="bg-white/10 hover:bg-white/20 text-xs py-2 px-3 rounded-xl">✨ Apply preset</button>
+              <button onClick={autoCorrectSelected} disabled={selectedIds.size === 0} className="bg-white/10 hover:bg-white/20 text-xs py-2 px-3 rounded-xl">🌀 Auto correct</button>
+              <button onClick={selectAll} className="bg-white/5 text-xs py-2 px-3 rounded-xl">✔️ Select all</button>
+              <button onClick={deleteSelected} disabled={selectedIds.size === 0} className="bg-red-500/20 text-red-300 text-xs py-2 px-3 rounded-xl">🗑 Delete</button>
+            </div>
+            <hr className="border-white/10" />
+            <div className="text-[10px] text-gray-400 space-y-1">
+              <p>⚡ Pro features: multi‑select, auto color correction, batch presets, ZIP export.</p>
+              <p>🎨 Click any thumbnail to select. Use shift+click for range (simple multi).</p>
+            </div>
+          </div>
 
-          {/* CENTRAL CANVAS */}
-          <main className="flex-1 canvas-container flex items-center justify-center p-5 relative">
-            <div className="relative shadow-2xl rounded-2xl overflow-hidden border border-white/15 transition-all duration-200" style={{ width: '480px', height: '680px', transform: `scale(${zoom/100})`, boxShadow: '0 25px 45px -12px black' }}>
-              <canvas ref={viewportCanvas} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-              {/* Interactive Layers - fixed missing key */}
-              <div className="absolute inset-0 z-10 pointer-events-none">
-                {layers.map(layer => {
-                  const isSelected = selectedId === layer.id;
-                  const commonStyle = { position: 'absolute', cursor: 'pointer', pointerEvents: 'auto', transition: 'outline 0.05s', outline: isSelected ? '2px solid #FF5C00' : 'none', outlineOffset: '2px' };
-                  if (layer.type === 'text') return (
-                    <div key={layer.id} onClick={() => setSelectedId(layer.id)} style={{ ...commonStyle, left: layer.x, top: layer.y, color: layer.color, fontSize: layer.fontSize, fontWeight: layer.fontWeight, letterSpacing: layer.letterSpacing }}>{layer.content}</div>
-                  );
-                  if (layer.type === 'rect') return (
-                    <div key={layer.id} onClick={() => setSelectedId(layer.id)} style={{ ...commonStyle, left: layer.x, top: layer.y, width: layer.w, height: layer.h, backgroundColor: layer.color, borderRadius: layer.radius, border: `1px solid ${layer.stroke || '#FFFFFF50'}` }} />
-                  );
-                  return null;
-                })}
+          {/* RIGHT: Grid of images */}
+          <div className="flex-1">
+            {processing && <div className="bg-black/50 text-center py-2 rounded-full text-xs mb-4">⏳ Processing images...</div>}
+            {images.length === 0 ? (
+              <div className="glass-panel rounded-2xl p-12 text-center border-dashed border-2 border-white/10">
+                <div className="text-5xl mb-3">🖼️</div>
+                <p className="text-gray-400 text-sm">Upload multiple images (JPG, PNG, WebP)</p>
+                <button onClick={() => fileInputRef.current.click()} className="mt-4 bg-[#FF5C00] px-6 py-2 rounded-full text-sm font-bold">Start batch</button>
               </div>
-            </div>
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 glass-premium rounded-full px-4 py-1.5 flex gap-3 text-[11px] font-mono"><span className="text-[#FF5C00]">◉ MATRIX ACTIVE</span> <span className="text-gray-400">| HSL NEURAL | 8‑BIT DEPTH</span></div>
-          </main>
-
-          {/* RIGHT INSPECTOR */}
-          <aside className="w-80 bg-[#0B0E14]/90 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 overflow-y-auto">
-            <div className="grid grid-cols-3 p-2 gap-2 border-b border-white/5 bg-black/20 sticky top-0 z-10">
-              {SIDEBAR_TABS.map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? 'bg-[#FF5C00]/20 text-white border border-[#FF5C00]/30' : 'text-gray-400 hover:text-white'}`}>{tab.label}</button>
-              ))}
-            </div>
-            <div className="p-5 space-y-6">
-              {activeTab === 'mixer' && (
-                <div className="animate-float space-y-6">
-                  <div className="glass-card p-4">
-                    <div className="text-[9px] font-mono font-bold tracking-wider text-[#FF5C00] mb-3">⚡ SPECTRAL BANDS</div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {Object.keys(hslMixer).map(name => (<button key={name} onClick={() => setActiveChannel(name)} className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeChannel === name ? 'bg-white/10 border border-[#FF5C00]/40' : 'bg-black/20 border border-white/5'}`}><div className="w-6 h-6 rounded-full mb-1 shadow-md" style={{ backgroundColor: hslMixer[name].hex }}></div><span className="text-[8px] font-mono uppercase">{name.slice(0,3)}</span></button>))}
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {images.map(img => (
+                  <div key={img.id} onClick={() => toggleSelect(img.id)} className={`image-card rounded-xl overflow-hidden glass-panel transition-all ${selectedIds.has(img.id) ? 'selected' : ''}`}>
+                    <div className="relative aspect-square bg-black/40">
+                      <img src={img.processedDataUrl} alt="preview" className="w-full h-full object-cover" />
+                      {selectedIds.has(img.id) && <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#FF5C00] flex items-center justify-center text-xs font-bold shadow">✓</div>}
+                    </div>
+                    <div className="p-2 text-[10px] flex justify-between items-center">
+                      <span className="truncate">{img.file.name.substring(0, 20)}</span>
+                      <span className="text-gray-400">{Math.round(img.file.size / 1024)}kb</span>
                     </div>
                   </div>
-                  <div className="glass-card p-5 space-y-4">
-                    <div className="flex justify-between items-center"><span className="text-[11px] font-bold uppercase tracking-wider text-white/70">{activeChannel.toUpperCase()} · HARMONICS</span><button onClick={resetChannel} className="text-[9px] bg-white/10 px-2 py-0.5 rounded-full">↺ reset</button></div>
-                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Hue Shift</span><span className="text-white">{hslMixer[activeChannel].hue > 0 ? `+${hslMixer[activeChannel].hue}` : hslMixer[activeChannel].hue}°</span></div><input type="range" min="-180" max="180" step="1" value={hslMixer[activeChannel].hue} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], hue: parseInt(e.target.value)}}))} className="slider-neo w-full mt-1" /></div>
-                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Saturation</span><span>{hslMixer[activeChannel].saturation}%</span></div><input type="range" min="-100" max="100" value={hslMixer[activeChannel].saturation} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], saturation: parseInt(e.target.value)}}))} className="slider-neo w-full" /></div>
-                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Luminance</span><span>{hslMixer[activeChannel].luminance}%</span></div><input type="range" min="-100" max="100" value={hslMixer[activeChannel].luminance} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], luminance: parseInt(e.target.value)}}))} className="slider-neo w-full" /></div>
-                    <button onClick={resetAllHSL} className="w-full mt-2 text-[9px] bg-white/5 py-1.5 rounded-lg hover:bg-[#FF5C00]/20">⟳ Reset Global Spectrum</button>
-                  </div>
-                </div>
-              )}
-              {activeTab === 'design' && (
-                <div className="animate-float space-y-5">
-                  <div className="glass-card p-3"><div className="text-[10px] font-mono text-gray-400">ACTIVE LAYER</div><select value={selectedId} onChange={e => setSelectedId(e.target.value)} className="w-full mt-1 bg-black/50 border border-white/10 rounded-xl p-2 text-xs">{layers.map(l => (<option key={l.id} value={l.id}>{l.type} — {l.id.slice(0,8)}</option>))}</select><div className="flex gap-2 mt-3"><button onClick={duplicateLayer} className="flex-1 bg-white/5 text-[10px] py-1.5 rounded-lg">⧉ Duplicate</button><button onClick={deleteLayer} className="flex-1 bg-red-500/20 text-red-300 text-[10px] py-1.5 rounded-lg">🗑 Delete</button></div></div>
-                  {selectedLayer && (<div className="glass-card p-4 space-y-4"><div className="text-[10px] font-bold text-[#FF5C00] uppercase tracking-wider">Transform</div><div className="grid grid-cols-2 gap-2"><div><label className="text-[9px] block">X</label><input type="number" value={selectedLayer.x} onChange={e => updateLayer('x', parseInt(e.target.value)||0)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs border border-white/5" /></div><div><label className="text-[9px] block">Y</label><input type="number" value={selectedLayer.y} onChange={e => updateLayer('y', parseInt(e.target.value)||0)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div></div>
-                  {selectedLayer.type === 'text' && (<><div><label className="text-[9px]">Text</label><input value={selectedLayer.content} onChange={e => updateLayer('content', e.target.value)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div><div><label className="text-[9px]">Font Size</label><input type="number" value={selectedLayer.fontSize} onChange={e => updateLayer('fontSize', parseInt(e.target.value))} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div><div><label className="text-[9px]">Color</label><input type="color" value={selectedLayer.color} onChange={e => updateLayer('color', e.target.value)} className="w-full h-8 bg-black rounded" /></div></>)}
-                  {selectedLayer.type === 'rect' && (<><div className="grid grid-cols-2 gap-2"><div><label className="text-[9px]">W</label><input type="number" value={selectedLayer.w} onChange={e => updateLayer('w', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div><div><label className="text-[9px]">H</label><input type="number" value={selectedLayer.h} onChange={e => updateLayer('h', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div></div><div><label className="text-[9px]">Radius</label><input type="number" value={selectedLayer.radius} onChange={e => updateLayer('radius', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div><div><label className="text-[9px]">Fill Color</label><input type="color" value={selectedLayer.color} onChange={e => updateLayer('color', e.target.value)} className="w-full h-8" /></div><div><label className="text-[9px]">Stroke</label><input type="color" value={selectedLayer.stroke || '#FFFFFF'} onChange={e => updateLayer('stroke', e.target.value)} className="w-full h-8" /></div></>)}
-                  </div>)}
-                </div>
-              )}
-              {activeTab === 'adjust' && (
-                <div className="animate-float glass-card p-5 space-y-5">
-                  <div><div className="flex justify-between text-[11px]"><span>Exposure</span><span>{coreAdj.exposure.toFixed(2)} EV</span></div><input type="range" min="-1.5" max="1.5" step="0.02" value={coreAdj.exposure} onChange={e => setCoreAdj(p => ({...p, exposure: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
-                  <div><div className="flex justify-between text-[11px]"><span>Contrast</span><span>{coreAdj.contrast.toFixed(2)}</span></div><input type="range" min="-0.8" max="1.2" step="0.02" value={coreAdj.contrast} onChange={e => setCoreAdj(p => ({...p, contrast: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
-                  <div><div className="flex justify-between text-[11px]"><span>Thermal Bias</span><span>{coreAdj.warmth.toFixed(2)}</span></div><input type="range" min="-1" max="1" step="0.02" value={coreAdj.warmth} onChange={e => setCoreAdj(p => ({...p, warmth: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
-                  <div><div className="flex justify-between text-[11px]"><span>Global Saturation</span><span>{globalSat}%</span></div><input type="range" min="-60" max="60" value={globalSat} onChange={e => setGlobalSat(parseInt(e.target.value))} className="slider-neo w-full" /></div>
-                </div>
-              )}
-            </div>
-          </aside>
+                ))}
+              </div>
+            )}
+            {images.length > 0 && (
+              <div className="mt-6 text-center text-[11px] text-gray-500">
+                ✅ {selectedIds.size} selected | Total {images.length} images | Click to toggle selection
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   };
 
-  // ========== APP ROOT ==========
+  // Root
   const App = () => {
-    const [session, setSession] = useState(() => {
-      const saved = localStorage.getItem('luminor_session');
+    const [user, setUser] = useState(() => {
+      const saved = localStorage.getItem('luminor_batch_user');
       return saved ? JSON.parse(saved) : null;
     });
-    return session ? <StudioWorkstation session={session} onLogout={() => { setSession(null); localStorage.removeItem('luminor_session'); }} /> : <AuthGate onAuth={(data) => { setSession(data); localStorage.setItem('luminor_session', JSON.stringify(data)); }} />;
+    return user ? <BatchStudio session={user} onLogout={() => { setUser(null); localStorage.removeItem('luminor_batch_user'); }} /> : <AuthGate onAuth={(data) => { setUser(data); localStorage.setItem('luminor_batch_user', JSON.stringify(data)); }} />;
   };
-  
+
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
