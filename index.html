@@ -3,126 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Luminor Studio Pro — Ultimate Photo Workstation</title>
+  <title>Luminor Spectrum | Neural Color Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    :root {
-      --brand-primary: #2F66F6;
-      --brand-primary-glow: rgba(47, 102, 246, 0.25);
-      --bg-surface: rgba(11, 13, 18, 0.75);
-      --border-subtle: rgba(255, 255, 255, 0.04);
-      --border-elevated: rgba(255, 255, 255, 0.08);
-    }
-    
-    * { 
-      touch-action: pan-y pinch-zoom; 
-      -webkit-tap-highlight-color: transparent;
+    * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
-    
-    body { 
-      font-family: 'Inter', system-ui, sans-serif;
-      background-color: #040507;
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #05070A;
       overflow: hidden;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.01em;
     }
 
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 99px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }
+    /* custom ultra-modern scroll */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 20, 30, 0.6); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #FF5C00; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #FF7A2F; }
 
-    .glass-panel { 
-      backdrop-filter: blur(32px) saturate(210%);
-      -webkit-backdrop-filter: blur(32px) saturate(210%);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65);
+    .glass-premium {
+      background: rgba(18, 22, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .glass-input { 
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-      color: white;
-    }
-    
-    .glass-input:focus {
-      border-color: var(--brand-primary);
-      background: rgba(47, 102, 246, 0.03);
-      box-shadow: 0 0 0 3px var(--brand-primary-glow);
-      outline: none;
+    .glass-card {
+      background: rgba(12, 16, 22, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
     }
 
-    .btn-action {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-      transform: translateZ(0);
-      will-change: transform, opacity;
+    .neon-border {
+      box-shadow: 0 0 0 1px rgba(255, 92, 0, 0.3), 0 0 0 3px rgba(255, 92, 0, 0.1);
     }
 
-    .btn-action:active {
-      transform: scale(0.95) translateY(0.5px);
-    }
-
-    .premium-slider {
+    .slider-neo {
       -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 4px;
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.08);
-      outline: none;
-      transition: background 0.2s;
+      background: transparent;
     }
-
-    .premium-slider::-webkit-slider-thumb {
+    .slider-neo::-webkit-slider-runnable-track {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+    }
+    .slider-neo::-webkit-slider-thumb {
       -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
       height: 14px;
+      width: 14px;
       border-radius: 50%;
-      background: #ffffff;
-      border: 2px solid var(--brand-primary);
+      background: #FF5C00;
+      margin-top: -5.5px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-      transition: transform 0.1s;
+      box-shadow: 0 0 6px #FF5C00;
+      transition: transform 0.1s ease;
+    }
+    .slider-neo::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+    .canvas-container {
+      background: radial-gradient(circle at 30% 20%, rgba(255, 92, 0, 0.08), transparent 70%);
     }
 
-    .premium-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
+    .gradient-mask {
+      mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
     }
 
-    @keyframes fadeIn { 
-      from { opacity: 0; transform: translateY(8px); } 
-      to { opacity: 1; transform: translateY(0); } 
+    .btn-glow {
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     }
+    .btn-glow:active { transform: scale(0.96); }
 
-    .animate-fadeIn { 
-      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @keyframes float-panel {
+      0% { opacity: 0; transform: translateY(6px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-float { animation: float-panel 0.2s ease-out forwards; }
+
+    .color-swatch {
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .color-swatch:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 2px #FF5C00;
     }
   </style>
 </head>
-<body class="bg-black text-white antialiased overflow-hidden select-none">
+<body class="text-gray-200 antialiased overflow-hidden">
 
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useRef, useCallback } = React;
+  const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-  // ========== AUTH VALIDATION ==========
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (pwd) => pwd && pwd.length >= 6;
-
-  // ========== COLOR SCIENCE UTILITIES ==========
+  // ---------- ADVANCED COLOR ENGINE ----------
   function rgbToHsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -132,21 +114,18 @@
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
       if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
       else if (max === g) h = (b - r) / d + 2;
-      else if (max === b) h = (r - g) / d + 4;
+      else h = (r - g) / d + 4;
       h /= 6;
     }
     return [h * 360, s, l];
   }
-
   function hue2rgb(p, q, t) {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
+    if (t < 0) t += 1; if (t > 1) t -= 1;
     if (t < 1/6) return p + (q - p) * 6 * t;
     if (t < 1/2) return q;
     if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
     return p;
   }
-
   function hslToRgb(h, s, l) {
     h /= 360;
     let r, g, b;
@@ -161,399 +140,291 @@
     return [r * 255, g * 255, b * 255];
   }
 
-  // ========== ADVANCED PIXEL PROCESSING ENGINE (HSL PER-CHANNEL + TONAL) ==========
-  function processImageWithHsl(srcData, dstData, adj, hslMix) {
-    const expFactor = Math.pow(2, adj.exposure);
-    const cont = adj.contrast + 1;
-    const hl = adj.highlights * 0.3;
-    const sh = adj.shadows * 0.3;
-    const satGlobal = adj.saturation;
-
-    for (let i = 0; i < srcData.length; i += 4) {
-      let r = srcData[i];
-      let g = srcData[i+1];
-      let b = srcData[i+2];
-
-      // exposure & contrast
-      r *= expFactor; g *= expFactor; b *= expFactor;
-      r = ((r / 255 - 0.5) * cont + 0.5) * 255;
-      g = ((g / 255 - 0.5) * cont + 0.5) * 255;
-      b = ((b / 255 - 0.5) * cont + 0.5) * 255;
-
-      // highlights / shadows
-      const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
-      const rAdj = Math.pow(Math.max(0, rNorm), 1 + hl) * (1 - sh) + sh;
-      const gAdj = Math.pow(Math.max(0, gNorm), 1 + hl) * (1 - sh) + sh;
-      const bAdj = Math.pow(Math.max(0, bNorm), 1 + hl) * (1 - sh) + sh;
-      r = rAdj * 255; g = gAdj * 255; b = bAdj * 255;
-
-      // Convert to HSL for channel-specific mixing
+  function computeImageMatrix(src, dst, coreAdj, hslMixer, globalSat) {
+    const exp = Math.pow(2, coreAdj.exposure);
+    const contrast = coreAdj.contrast + 1;
+    const warmthAdj = coreAdj.warmth;
+    const satGlobal = 1 + globalSat / 100;
+    
+    for (let i = 0; i < src.length; i += 4) {
+      let r = src[i], g = src[i+1], b = src[i+2];
+      r *= exp; g *= exp; b *= exp;
+      r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
+      g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
+      b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
+      
       let [h, s, l] = rgbToHsl(r, g, b);
+      let channelKey = 'red';
+      if (h >= 345 || h < 20) channelKey = 'red';
+      else if (h >= 20 && h < 50) channelKey = 'orange';
+      else if (h >= 50 && h < 80) channelKey = 'yellow';
+      else if (h >= 80 && h < 160) channelKey = 'green';
+      else if (h >= 160 && h < 220) channelKey = 'aqua';
+      else if (h >= 220 && h < 280) channelKey = 'blue';
+      else if (h >= 280 && h < 320) channelKey = 'purple';
+      else channelKey = 'magenta';
       
-      // Identify dominant channel (8‑way)
-      let channel = 'red';
-      if (h >= 345 || h < 15) channel = 'red';
-      else if (h >= 15 && h < 45) channel = 'orange';
-      else if (h >= 45 && h < 75) channel = 'yellow';
-      else if (h >= 75 && h < 150) channel = 'green';
-      else if (h >= 150 && h < 200) channel = 'aqua';
-      else if (h >= 200 && h < 260) channel = 'blue';
-      else if (h >= 260 && h < 300) channel = 'purple';
-      else channel = 'magenta';
-      
-      const mix = hslMix[channel];
+      const mix = hslMixer[channelKey];
       h = (h + mix.hue + 360) % 360;
       s = Math.min(1, Math.max(0, s * (1 + mix.saturation / 100)));
       l = Math.min(1, Math.max(0, l * (1 + mix.luminance / 100)));
       
-      let [newR, newG, newB] = hslToRgb(h, s, l);
+      // global saturation injection
+      s = Math.min(1, Math.max(0, s * satGlobal));
       
-      // global warmth & tint
-      newR += adj.warmth * 12;
-      newB -= adj.warmth * 12;
-      newG += adj.tint * 10;
+      [r, g, b] = hslToRgb(h, s, l);
+      r += warmthAdj * 12; b -= warmthAdj * 8;
       
-      // global saturation (after channel mixing)
-      const gray = 0.299 * newR + 0.587 * newG + 0.114 * newB;
-      newR = gray + (newR - gray) * (1 + satGlobal);
-      newG = gray + (newG - gray) * (1 + satGlobal);
-      newB = gray + (newB - gray) * (1 + satGlobal);
-      
-      dstData[i] = Math.min(255, Math.max(0, Math.round(newR)));
-      dstData[i+1] = Math.min(255, Math.max(0, Math.round(newG)));
-      dstData[i+2] = Math.min(255, Math.max(0, Math.round(newB)));
-      dstData[i+3] = srcData[i+3];
+      dst[i] = Math.min(255, Math.max(0, r));
+      dst[i+1] = Math.min(255, Math.max(0, g));
+      dst[i+2] = Math.min(255, Math.max(0, b));
+      dst[i+3] = src[i+3];
     }
   }
 
-  // ========== PRESETS & CONSTANTS ==========
-  const FILTERS = {
-    'None': { exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0 },
-    'Cinematic': { exposure: 0.1, contrast: 0.2, saturation: 0.15, highlights: -0.1, shadows: 0.05, warmth: 0.2, tint: -0.1 },
-    'Nordic': { exposure: 0.15, contrast: 0.1, saturation: -0.15, highlights: 0.1, shadows: -0.05, warmth: -0.3, tint: 0.1 },
-    'Cyberpunk': { exposure: -0.05, contrast: 0.25, saturation: 0.3, highlights: -0.15, shadows: 0.1, warmth: -0.2, tint: 0.4 }
+  // ----- INITIAL MATRICES -----
+  const INITIAL_CORE = { exposure: 0.15, contrast: 0.2, warmth: 0.05 };
+  const INITIAL_HSL = {
+    red: { hue: 18, saturation: -12, luminance: 18, hex: '#FF453A' },
+    orange: { hue: 6, saturation: 0, luminance: 5, hex: '#FF9F0A' },
+    yellow: { hue: -5, saturation: -32, luminance: 4, hex: '#FFD60A' },
+    green: { hue: 88, saturation: 0, luminance: 2, hex: '#32D74B' },
+    aqua: { hue: 0, saturation: 0, luminance: 0, hex: '#64D2FF' },
+    blue: { hue: -48, saturation: -68, luminance: 12, hex: '#0A84FF' },
+    purple: { hue: 12, saturation: 0, luminance: 0, hex: '#BF5AF2' },
+    magenta: { hue: 0, saturation: 0, luminance: 0, hex: '#FF375F' }
   };
-  
-  const COMPREHENSIVE_TOOLBAR = [
-    { id: 'select', label: 'Transform', icon: '⛶', desc: 'Canvas positioning' },
-    { id: 'crop', label: 'Crop', icon: '📐', desc: 'Aspect ratio' },
-    { id: 'adjust', label: 'Tonal', icon: '☀️', desc: 'Exposure' },
-    { id: 'mixer', label: 'Color Mixer', icon: '🎛️', desc: 'HSL per channel' },
-    { id: 'brush', label: 'Mask', icon: '🖌️', desc: 'Local adj.' },
-    { id: 'repair', label: 'Heal', icon: '🧹', desc: 'Content-aware' },
-    { id: 'layers', label: 'Layers', icon: '🥞', desc: 'Compositing' }
+  const SIDEBAR_TABS = [
+    { id: 'design', label: 'Design' },
+    { id: 'mixer', label: 'Spectrum Mixer' },
+    { id: 'adjust', label: 'Neural Filter' }
   ];
-  
-  const COMPACT_HSL_INITIAL = {
-    red: { hue: 0, saturation: 0, luminance: 0, color: '#FF3B30' },
-    orange: { hue: 0, saturation: 0, luminance: 0, color: '#FF9500' },
-    yellow: { hue: 0, saturation: 0, luminance: 0, color: '#FFCC00' },
-    green: { hue: 0, saturation: 0, luminance: 0, color: '#34C759' },
-    aqua: { hue: 0, saturation: 0, luminance: 0, color: '#5AC8FA' },
-    blue: { hue: 0, saturation: 0, luminance: 0, color: '#007AFF' },
-    purple: { hue: 0, saturation: 0, luminance: 0, color: '#5856D6' },
-    magenta: { hue: 0, saturation: 0, luminance: 0, color: '#FF2D55' }
-  };
+  const TOOL_ITEMS = [
+    { id: 'select', label: 'Select', iconPath: "M5 3L3 5L8 10L5 13L13 13L13 5L10 8L5 3Z", hotkey: 'V' },
+    { id: 'text', label: 'Text', iconPath: "M4 7h16M9 3v18M15 3v18", hotkey: 'T' },
+    { id: 'shape', label: 'Shape', iconPath: "M3 3h18v18H3zM8 8h8v8H8z", hotkey: 'R' },
+    { id: 'mixer_shortcut', label: 'HSL Focus', iconPath: "M12 3v18M9 6l3-3 3 3M9 18l3 3 3-3", hotkey: 'M' }
+  ];
 
-  // ========== AUTH GUARD ==========
-  const AuthGuard = ({ onAuthSuccess }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      if (!validateEmail(email.trim()) || !validatePassword(password)) {
-        setError('Invalid credentials (email + min 6 chars)');
-        return;
-      }
-      onAuthSuccess({ email: email.trim() });
-    };
+  // AUTH LAYER (minimal but elegant)
+  const AuthGate = ({ onAuth }) => {
+    const [email, setEmail] = useState('creator@luminor.space');
+    const handleLogin = (e) => { e.preventDefault(); onAuth({ email }); };
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050608]">
-        <div className="absolute top-1/4 left-1/3 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="glass-panel w-full max-w-sm rounded-2xl p-6 relative z-10 animate-fadeIn">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold shadow-[0_0_20px_rgba(47,102,246,0.35)] mb-3">✓</div>
-            <h1 className="text-lg font-bold tracking-tight">Luminor Workstation</h1>
+      <div className="fixed inset-0 bg-[#03050A] flex items-center justify-center z-50">
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF5C00]/10 via-transparent to-[#2F66F6]/10 pointer-events-none" />
+        <div className="glass-premium rounded-2xl w-full max-w-md p-8 shadow-2xl border-white/10">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5C00] to-[#FF8A3C] shadow-lg" />
+            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">LUMINOR CORE</h1>
           </div>
-          {error && <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">{error}</div>}
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input type="email" placeholder="operator@studio.com" value={email} onChange={e => setEmail(e.target.value)} className="glass-input w-full px-3.5 py-2.5 text-xs focus:outline-none" />
-            <input type="password" placeholder="access key (6+ chars)" value={password} onChange={e => setPassword(e.target.value)} className="glass-input w-full px-3.5 py-2.5 text-xs focus:outline-none" />
-            <button type="submit" className="btn-action w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-xl shadow-md">Mount Workspace</button>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Node identity</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00] transition" />
+            </div>
+            <button type="submit" className="w-full bg-[#FF5C00] hover:bg-[#E05200] py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg transition-all">⚡ Enter Studio</button>
           </form>
         </div>
       </div>
     );
   };
 
-  // ========== MAIN PHOTO EDITOR COMPONENT ==========
-  const PhotoEditor = ({ onLogout }) => {
-    const [activeTab, setActiveTab] = useState('mixer');
-    const [selectedTool, setSelectedTool] = useState('mixer');
+  // ----- ICON COMPONENT (SVG minimal) -----
+  const StudioIcon = ({ d, size = 20 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  );
+
+  // MAIN STUDIO
+  const StudioWorkstation = ({ session, onLogout }) => {
+    const [activeTab, setActiveTab] = useState('design');
+    const [activeTool, setActiveTool] = useState('select');
     const [activeChannel, setActiveChannel] = useState('red');
-    const [adjustments, setAdjustments] = useState({ ...FILTERS['None'] });
-    const [hslMixer, setHslMixer] = useState(COMPACT_HSL_INITIAL);
-    const [history, setHistory] = useState([{ adj: { ...FILTERS['None'] }, hsl: JSON.parse(JSON.stringify(COMPACT_HSL_INITIAL)) }]);
-    const [historyIdx, setHistoryIdx] = useState(0);
-    const [splitPos, setSplitPos] = useState(0.5);
-    const [feedback, setFeedback] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
+    const [zoom, setZoom] = useState(100);
+    const [coreAdj, setCoreAdj] = useState({ ...INITIAL_CORE });
+    const [globalSat, setGlobalSat] = useState(0);
+    const [hslMixer, setHslMixer] = useState(INITIAL_HSL);
     
-    const canvasRef = useRef(null);
-    const originalRef = useRef(null);
-    const processedRef = useRef(null);
-    const offscreenOrig = useRef(null);
-    const offscreenProc = useRef(null);
-    const rAFRef = useRef(false);
-    const imgDimensions = useRef({ w: 1000, h: 680 });
-
-    // Helper: load new image data into buffers
-    const loadImageData = useCallback((imageData) => {
-      const w = imageData.width, h = imageData.height;
-      imgDimensions.current = { w, h };
-      originalRef.current = imageData;
-      processedRef.current = new ImageData(new Uint8ClampedArray(imageData.data.length), w, h);
-      
-      if (!offscreenOrig.current) offscreenOrig.current = document.createElement('canvas');
-      offscreenOrig.current.width = w; offscreenOrig.current.height = h;
-      offscreenOrig.current.getContext('2d').putImageData(imageData, 0, 0);
-      
-      if (!offscreenProc.current) offscreenProc.current = document.createElement('canvas');
-      offscreenProc.current.width = w; offscreenProc.current.height = h;
-      offscreenProc.current.getContext('2d').putImageData(processedRef.current, 0, 0);
-      
-      // reset adjustments & history for new image
-      const cleanAdj = { ...FILTERS['None'] };
-      const cleanHsl = JSON.parse(JSON.stringify(COMPACT_HSL_INITIAL));
-      setAdjustments(cleanAdj);
-      setHslMixer(cleanHsl);
-      setHistory([{ adj: cleanAdj, hsl: cleanHsl }]);
-      setHistoryIdx(0);
-      setSplitPos(0.5);
-      // re-render
-      runProcessingPipeline();
-    }, []);
-
-    // generate procedural test pattern
-    const generateDemoImage = useCallback(() => {
-      const w = 1000, h = 680;
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#090d16'); grad.addColorStop(0.5, '#111322'); grad.addColorStop(1, '#0c0e12');
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
-      const colors = ['rgba(255,59,48,0.25)', 'rgba(52,199,89,0.2)', 'rgba(0,122,255,0.25)', 'rgba(255,204,0,0.2)'];
-      const pos = [[250,250],[700,450],[350,480],[750,220]];
-      colors.forEach((c,i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(pos[i][0], pos[i][1], 160, 0, Math.PI*2); ctx.fill(); });
-      ctx.strokeStyle = 'rgba(255,255,255,0.02)'; ctx.lineWidth = 1;
-      for (let x=0; x<w; x+=50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-      return ctx.getImageData(0,0,w,h);
-    }, []);
-
-    // image upload handler
-    const handleImageUpload = useCallback((file) => {
-      if (!file || !file.type.startsWith('image/')) return;
-      setIsUploading(true);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const w = img.width, h = img.height;
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = w; tempCanvas.height = h;
-          const ctx = tempCanvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          const imgData = ctx.getImageData(0, 0, w, h);
-          loadImageData(imgData);
-          setIsUploading(false);
-          setFeedback('Custom image loaded');
-          setTimeout(() => setFeedback(''), 2000);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }, [loadImageData]);
-
-    // initialize demo image
+    const [layers, setLayers] = useState([
+      { id: 'title-1', type: 'text', content: 'LUMINOR SPECTRUM', x: 70, y: 150, fontSize: 34, fontWeight: '800', color: '#FFFFFF', letterSpacing: '0.02em' },
+      { id: 'badge', type: 'rect', x: 70, y: 440, w: 210, h: 52, radius: 40, color: 'rgba(255, 92, 0, 0.18)', stroke: '#FF5C00', strokeWidth: 1.5 },
+      { id: 'desc-text', type: 'text', content: 'CHROMATIC ENGINE', x: 80, y: 480, fontSize: 13, fontWeight: '600', color: '#FF5C00', letterSpacing: '0.2em' },
+      { id: 'hero-rect', type: 'rect', x: 290, y: 520, w: 120, h: 38, radius: 12, color: 'rgba(255,255,255,0.03)', stroke: '#ffffff30' }
+    ]);
+    const [selectedId, setSelectedId] = useState('title-1');
+    
+    const viewportCanvas = useRef(null);
+    const originalBuffer = useRef(null);
+    const processedBuffer = useRef(null);
+    const renderLock = useRef(false);
+    
+    // build procedural abstract matrix background (4K ready)
     useEffect(() => {
-      const demo = generateDemoImage();
-      loadImageData(demo);
+      const w = 480, h = 680;
+      const canvasOff = document.createElement('canvas');
+      canvasOff.width = w; canvasOff.height = h;
+      const ctx = canvasOff.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, w*0.6, h);
+      grad.addColorStop(0, '#3D2B56');
+      grad.addColorStop(0.3, '#B73C2C');
+      grad.addColorStop(0.7, '#FF8C42');
+      grad.addColorStop(1, '#F4D03F');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'overlay';
+      for (let i = 0; i < 180; i++) {
+        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.12})`;
+        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*7+2, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 0, w, h);
+      const imgData = ctx.getImageData(0, 0, w, h);
+      originalBuffer.current = imgData;
+      processedBuffer.current = new ImageData(new Uint8ClampedArray(imgData.data.length), w, h);
+      triggerRender();
     }, []);
 
-    // core rendering pipeline
-    const runProcessingPipeline = useCallback(() => {
-      if (rAFRef.current || !originalRef.current) return;
-      rAFRef.current = true;
+    const triggerRender = useCallback(() => {
+      if (renderLock.current || !originalBuffer.current) return;
+      renderLock.current = true;
       requestAnimationFrame(() => {
-        rAFRef.current = false;
-        const mainCanvas = canvasRef.current;
-        if (!mainCanvas || !originalRef.current || !processedRef.current) return;
-        const w = originalRef.current.width, h = originalRef.current.height;
-        if (mainCanvas.width !== w) { mainCanvas.width = w; mainCanvas.height = h; }
-        const ctx = mainCanvas.getContext('2d');
-        
-        processImageWithHsl(originalRef.current.data, processedRef.current.data, adjustments, hslMixer);
-        offscreenProc.current.getContext('2d').putImageData(processedRef.current, 0, 0);
-        
-        const divider = w * splitPos;
-        ctx.clearRect(0, 0, w, h);
-        if (divider > 0) ctx.drawImage(offscreenOrig.current, 0, 0, divider, h, 0, 0, divider, h);
-        if (divider < w) ctx.drawImage(offscreenProc.current, divider, 0, w - divider, h, divider, 0, w - divider, h);
-        
-        ctx.strokeStyle = '#2F66F6'; ctx.lineWidth = 4; ctx.shadowBlur = 0;
-        ctx.beginPath(); ctx.moveTo(divider, 0); ctx.lineTo(divider, h); ctx.stroke();
+        const canvas = viewportCanvas.current;
+        if (!canvas) { renderLock.current = false; return; }
+        const w = originalBuffer.current.width, h = originalBuffer.current.height;
+        canvas.width = w; canvas.height = h;
+        computeImageMatrix(originalBuffer.current.data, processedBuffer.current.data, coreAdj, hslMixer, globalSat);
+        const temp = document.createElement('canvas'); temp.width = w; temp.height = h;
+        temp.getContext('2d').putImageData(processedBuffer.current, 0, 0);
+        canvas.getContext('2d').clearRect(0, 0, w, h);
+        canvas.getContext('2d').drawImage(temp, 0, 0);
+        renderLock.current = false;
       });
-    }, [adjustments, hslMixer, splitPos]);
+    }, [coreAdj, hslMixer, globalSat]);
 
-    useEffect(() => { runProcessingPipeline(); }, [runProcessingPipeline]);
+    useEffect(() => { triggerRender(); }, [triggerRender]);
 
-    const commitToHistory = useCallback(() => {
-      const snap = { adj: { ...adjustments }, hsl: JSON.parse(JSON.stringify(hslMixer)) };
-      const newHistory = history.slice(0, historyIdx + 1);
-      newHistory.push(snap);
-      setHistory(newHistory);
-      setHistoryIdx(newHistory.length - 1);
-    }, [adjustments, hslMixer, history, historyIdx]);
-
-    const undo = () => { if (historyIdx > 0) { const idx = historyIdx-1; setHistoryIdx(idx); setAdjustments({ ...history[idx].adj }); setHslMixer(history[idx].hsl); } };
-    const redo = () => { if (historyIdx < history.length-1) { const idx = historyIdx+1; setHistoryIdx(idx); setAdjustments({ ...history[idx].adj }); setHslMixer(history[idx].hsl); } };
+    const selectedLayer = useMemo(() => layers.find(l => l.id === selectedId), [layers, selectedId]);
     
-    const applyPreset = (name) => {
-      setAdjustments(FILTERS[name]);
-      commitToHistory();
+    const updateLayer = (key, val) => setLayers(prev => prev.map(l => l.id === selectedId ? { ...l, [key]: val } : l));
+    const addLayer = (type) => {
+      const id = `${type}-${Date.now()}`;
+      if (type === 'text') setLayers(prev => [...prev, { id, type: 'text', content: 'NEW TEXT', x: 140, y: 320, fontSize: 22, fontWeight: '600', color: '#FFFFFF' }]);
+      else setLayers(prev => [...prev, { id, type: 'rect', x: 130, y: 360, w: 150, h: 48, radius: 8, color: 'rgba(255,92,0,0.2)', stroke: '#FF5C00' }]);
+      setSelectedId(id); setActiveTool('select');
     };
-    
-    const handleSplitDrag = useCallback((e) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let pos = (clientX - rect.left) / rect.width;
-      pos = Math.max(0, Math.min(1, pos));
-      setSplitPos(pos);
-    }, []);
-    
-    const selectTool = (toolId, label) => {
-      setSelectedTool(toolId);
-      if (toolId === 'adjust') setActiveTab('adjust');
-      else if (toolId === 'mixer') setActiveTab('mixer');
-      setFeedback(`Tool: ${label} active`);
-      setTimeout(() => setFeedback(''), 1500);
+    const deleteLayer = () => { if (layers.length > 1) setLayers(prev => prev.filter(l => l.id !== selectedId)); setSelectedId(layers[0]?.id || layers[1]?.id); };
+    const duplicateLayer = () => {
+      const original = selectedLayer;
+      if (!original) return;
+      const newId = `${original.type}-copy-${Date.now()}`;
+      setLayers(prev => [...prev, { ...original, id: newId, x: original.x + 15, y: original.y + 15 }]);
+      setSelectedId(newId);
     };
-
+    const handleToolAction = (toolId) => {
+      if (toolId === 'mixer_shortcut') { setActiveTab('mixer'); setActiveTool('select'); return; }
+      if (toolId === 'text') addLayer('text');
+      else if (toolId === 'shape') addLayer('rect');
+      else setActiveTool(toolId);
+    };
+    const resetChannel = () => {
+      setHslMixer(prev => ({ ...prev, [activeChannel]: { ...INITIAL_HSL[activeChannel] } }));
+    };
+    const resetAllHSL = () => { setHslMixer(INITIAL_HSL); };
+    
     return (
-      <div className="flex flex-col h-screen w-full bg-[#030406] overflow-hidden text-gray-200">
-        {/* Header */}
-        <header className="h-14 shrink-0 glass-panel border-b border-white/5 flex items-center justify-between px-5 z-30">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-xs font-bold shadow-lg">✓</div>
-            <span className="font-bold text-xs tracking-tight uppercase">Luminor Workstation</span>
-          </div>
-          {feedback && <div className="hidden md:block text-[10px] font-mono text-blue-400 bg-blue-500/5 px-3 py-1 rounded-md border border-blue-500/10 animate-fadeIn">{feedback}</div>}
-          <div className="flex items-center gap-3">
-            <label className="btn-action h-7 px-2.5 text-[10px] uppercase bg-white/5 hover:bg-white/10 rounded-md border border-white/10 cursor-pointer flex items-center gap-1">
-              📷 Upload
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => e.target.files && handleImageUpload(e.target.files[0])} className="hidden" />
-            </label>
-            <button onClick={() => loadImageData(generateDemoImage())} className="h-7 px-2.5 text-[10px] uppercase bg-white/5 hover:bg-white/10 rounded-md border border-white/10">Reset Demo</button>
-            <div className="bg-white/5 p-0.5 rounded-lg border border-white/5 flex">
-              <button onClick={undo} disabled={historyIdx===0} className="w-7 h-6 flex items-center justify-center text-xs disabled:opacity-20 hover:bg-white/5 rounded">↩</button>
-              <button onClick={redo} disabled={historyIdx===history.length-1} className="w-7 h-6 flex items-center justify-center text-xs disabled:opacity-20 hover:bg-white/5 rounded">↪</button>
+      <div className="h-screen w-full bg-[#05070A] flex flex-col overflow-hidden">
+        {/* Top Bar - futuristic */}
+        <header className="h-14 flex items-center justify-between px-5 border-b border-white/5 bg-[#0B0E14]/80 backdrop-blur-md shrink-0 z-30">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5C00] shadow-[0_0_8px_#FF5C00]"></div>
+              <span className="font-mono text-xs font-bold tracking-[0.2em] text-white/90">LUMINOR | STUDIO PRO</span>
             </div>
-            <button onClick={onLogout} className="h-7 px-2.5 text-[10px] uppercase font-bold tracking-wider bg-red-500/10 text-red-400 rounded-md border border-red-500/20">Exit</button>
+            <div className="hidden md:flex text-[11px] font-mono text-gray-400 border-l border-white/10 pl-4"><span className="text-[#FF5C00]">ACTIVE NODE :</span> {session.email}</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setZoom(z => Math.min(180, z+10))} className="p-1.5 text-gray-300 hover:text-white text-sm bg-white/5 rounded-md">🔍+</button>
+            <button onClick={() => setZoom(z => Math.max(40, z-10))} className="p-1.5 text-gray-300 hover:text-white text-sm bg-white/5 rounded-md">🔍-</button>
+            <button onClick={onLogout} className="bg-white/5 hover:bg-[#FF5C00]/20 text-white text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 transition">EXPORT</button>
           </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Vertical Toolbar */}
-          <aside className="w-16 shrink-0 border-r border-white/5 bg-[#06070a]/90 flex flex-col items-center py-4 gap-2.5 z-20">
-            <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500 mb-1">Tools</div>
-            {COMPREHENSIVE_TOOLBAR.map(tool => (
-              <button key={tool.id} onClick={() => selectTool(tool.id, tool.label)} className={`btn-action w-11 h-11 rounded-xl flex flex-col items-center justify-center border transition-all ${selectedTool === tool.id ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_14px_rgba(47,102,246,0.4)]' : 'bg-white/0 border-transparent text-gray-400 hover:bg-white/5'}`} title={tool.desc}>
-                <span className="text-lg leading-none mb-0.5">{tool.icon}</span>
-                <span className="text-[8px] font-medium tracking-tight">{tool.label}</span>
-              </button>
-            ))}
+          {/* LEFT TOOLBAR (modern svg) */}
+          <aside className="w-16 bg-[#0A0D14]/90 backdrop-blur-sm border-r border-white/5 flex flex-col items-center py-4 gap-3 z-20">
+            {TOOL_ITEMS.map(tool => {
+              const isActive = activeTool === tool.id || (tool.id === 'mixer_shortcut' && activeTab === 'mixer');
+              return (
+                <button key={tool.id} onClick={() => handleToolAction(tool.id)} className={`group w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-150 ${isActive ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_#FF5C00]' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+                  <StudioIcon d={tool.iconPath} size={20} />
+                  <span className="absolute -right-8 opacity-0 group-hover:opacity-100 transition bg-black/80 text-[9px] py-0.5 px-1.5 rounded-md font-mono">{tool.hotkey}</span>
+                </button>
+              );
+            })}
           </aside>
 
-          {/* Canvas Viewport */}
-          <main className="flex-1 bg-[#050608] flex items-center justify-center p-4 overflow-hidden relative">
-            {isUploading ? (
-              <div className="text-gray-400 text-xs">Processing image...</div>
-            ) : (
-              <div className="relative shadow-2xl rounded-xl overflow-hidden border border-white/5 max-w-full max-h-full">
-                <canvas ref={canvasRef} className="max-w-full h-auto max-h-[calc(100vh-10rem)] object-contain cursor-ew-resize block touch-none"
-                  onMouseMove={e => e.buttons === 1 && handleSplitDrag(e)} onMouseDown={handleSplitDrag}
-                  onTouchMove={handleSplitDrag} onTouchStart={handleSplitDrag} />
+          {/* CENTRAL CANVAS ZONE */}
+          <main className="flex-1 canvas-container flex items-center justify-center p-5 relative">
+            <div className="relative shadow-2xl rounded-2xl overflow-hidden border border-white/15 transition-all duration-200" style={{ width: '480px', height: '680px', transform: `scale(${zoom/100})`, boxShadow: '0 25px 45px -12px black' }}>
+              <canvas ref={viewportCanvas} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+              {/* Interactive Layers */}
+              <div className="absolute inset-0 z-10 pointer-events-none">
+                {layers.map(layer => {
+                  const isSelected = selectedId === layer.id;
+                  const commonStyle = { position: 'absolute', cursor: 'pointer', pointerEvents: 'auto', transition: 'outline 0.05s', outline: isSelected ? '2px solid #FF5C00' : 'none', outlineOffset: '2px' };
+                  if (layer.type === 'text') return (
+                    <div key={layer.id} onClick={() => setSelectedId(layer.id)} style={{ ...commonStyle, left: layer.x, top: layer.y, color: layer.color, fontSize: layer.fontSize, fontWeight: layer.fontWeight, letterSpacing: layer.letterSpacing }}>{layer.content}</div>
+                  );
+                  if (layer.type === 'rect') return (
+                    <div key={layer.id} onClick={() => setSelectedId(layer.id)} style={{ ...commonStyle, left: layer.x, top: layer.y, width: layer.w, height: layer.h, backgroundColor: layer.color, borderRadius: layer.radius, border: `1px solid ${layer.stroke || '#FFFFFF50'}` }} />
+                  );
+                  return null;
+                })}
               </div>
-            )}
+            </div>
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 glass-premium rounded-full px-4 py-1.5 flex gap-3 text-[11px] font-mono"><span className="text-[#FF5C00]">◉ MATRIX ACTIVE</span> <span className="text-gray-400">| HSL NEURAL | 8‑BIT DEPTH</span></div>
           </main>
 
-          {/* Right Panel */}
-          <aside className="w-80 border-l border-white/5 bg-[#080a0e] overflow-y-auto shrink-0 flex flex-col z-20">
-            <div className="grid grid-cols-3 border-b border-white/5 p-2 gap-1 bg-black/20 shrink-0">
-              <button onClick={() => setActiveTab('adjust')} className={`py-1.5 rounded-lg text-xs font-bold tracking-wide ${activeTab==='adjust' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-400'}`}>Tonal</button>
-              <button onClick={() => setActiveTab('mixer')} className={`py-1.5 rounded-lg text-xs font-bold tracking-wide ${activeTab==='mixer' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-400'}`}>Color Mixer</button>
-              <button onClick={() => setActiveTab('presets')} className={`py-1.5 rounded-lg text-xs font-bold tracking-wide ${activeTab==='presets' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-400'}`}>Presets</button>
+          {/* RIGHT INSPECTOR — PREMIUM */}
+          <aside className="w-80 bg-[#0B0E14]/90 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 overflow-y-auto">
+            <div className="grid grid-cols-3 p-2 gap-2 border-b border-white/5 bg-black/20 sticky top-0 z-10">
+              {SIDEBAR_TABS.map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? 'bg-[#FF5C00]/20 text-white border border-[#FF5C00]/30' : 'text-gray-400 hover:text-white'}`}>{tab.label}</button>
+              ))}
             </div>
-            
-            <div className="p-4 flex-1 overflow-y-auto space-y-4">
+            <div className="p-5 space-y-6">
               {activeTab === 'mixer' && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Channel Matrix</h3>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {Object.keys(hslMixer).map(name => (
-                        <button key={name} onClick={() => setActiveChannel(name)} className={`py-2 rounded-lg flex flex-col items-center justify-center gap-1 transition border ${activeChannel===name ? 'bg-white/5 border-blue-500/50' : 'bg-white/0 border-white/5 hover:bg-white/5'}`}>
-                          <span className="w-3 h-3 rounded-full block border border-white/20" style={{ backgroundColor: hslMixer[name].color }} />
-                          <span className="text-[8px] uppercase font-bold">{name.substring(0,3)}</span>
-                        </button>
-                      ))}
+                <div className="animate-float space-y-6">
+                  <div className="glass-card p-4">
+                    <div className="text-[9px] font-mono font-bold tracking-wider text-[#FF5C00] mb-3">⚡ SPECTRAL BANDS</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {Object.keys(hslMixer).map(name => (<button key={name} onClick={() => setActiveChannel(name)} className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeChannel === name ? 'bg-white/10 border border-[#FF5C00]/40' : 'bg-black/20 border border-white/5'}`}><div className="w-6 h-6 rounded-full mb-1 shadow-md" style={{ backgroundColor: hslMixer[name].hex }}></div><span className="text-[8px] font-mono uppercase">{name.slice(0,3)}</span></button>))}
                     </div>
                   </div>
-                  <div className="glass-panel rounded-xl p-4 space-y-3.5">
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: hslMixer[activeChannel].color }} /><span className="text-[10px] font-bold uppercase">{activeChannel}</span></div>
-                    {['hue','saturation','luminance'].map(param => {
-                      const label = param === 'hue' ? 'Hue Shift' : (param === 'saturation' ? 'Saturation %' : 'Luminance %');
-                      const minVal = param === 'hue' ? -180 : -100;
-                      const maxVal = param === 'hue' ? 180 : 100;
-                      const step = 1;
-                      const value = hslMixer[activeChannel][param];
-                      const onChange = (v) => setHslMixer(prev => ({...prev, [activeChannel]: {...prev[activeChannel], [param]: v}}));
-                      return (
-                        <div key={param}>
-                          <div className="flex justify-between text-xs text-gray-400 mb-1"><span>{label}</span><span className="font-mono">{value}{param==='hue'?'°':'%'}</span></div>
-                          <input type="range" min={minVal} max={maxVal} step={step} value={value} onChange={e => onChange(parseInt(e.target.value))} onMouseUp={commitToHistory} onTouchEnd={commitToHistory} className="premium-slider" />
-                        </div>
-                      );
-                    })}
+                  <div className="glass-card p-5 space-y-4">
+                    <div className="flex justify-between items-center"><span className="text-[11px] font-bold uppercase tracking-wider text-white/70">{activeChannel.toUpperCase()} · HARMONICS</span><button onClick={resetChannel} className="text-[9px] bg-white/10 px-2 py-0.5 rounded-full">↺ reset</button></div>
+                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Hue Shift</span><span className="text-white">{hslMixer[activeChannel].hue > 0 ? `+${hslMixer[activeChannel].hue}` : hslMixer[activeChannel].hue}°</span></div><input type="range" min="-180" max="180" step="1" value={hslMixer[activeChannel].hue} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], hue: parseInt(e.target.value)}}))} className="slider-neo w-full mt-1" /></div>
+                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Saturation</span><span>{hslMixer[activeChannel].saturation}%</span></div><input type="range" min="-100" max="100" value={hslMixer[activeChannel].saturation} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], saturation: parseInt(e.target.value)}}))} className="slider-neo w-full" /></div>
+                    <div><div className="flex justify-between text-[10px] text-gray-400"><span>Luminance</span><span>{hslMixer[activeChannel].luminance}%</span></div><input type="range" min="-100" max="100" value={hslMixer[activeChannel].luminance} onChange={e => setHslMixer(p => ({...p, [activeChannel]: {...p[activeChannel], luminance: parseInt(e.target.value)}}))} className="slider-neo w-full" /></div>
+                    <button onClick={resetAllHSL} className="w-full mt-2 text-[9px] bg-white/5 py-1.5 rounded-lg hover:bg-[#FF5C00]/20">⟳ Reset Global Spectrum</button>
                   </div>
+                </div>
+              )}
+              {activeTab === 'design' && (
+                <div className="animate-float space-y-5">
+                  <div className="glass-card p-3"><div className="text-[10px] font-mono text-gray-400">ACTIVE LAYER</div><select value={selectedId} onChange={e => setSelectedId(e.target.value)} className="w-full mt-1 bg-black/50 border border-white/10 rounded-xl p-2 text-xs">{layers.map(l => (<option key={l.id} value={l.id}>{l.type} — {l.id.slice(0,8)}</option>))}</select><div className="flex gap-2 mt-3"><button onClick={duplicateLayer} className="flex-1 bg-white/5 text-[10px] py-1.5 rounded-lg">⧉ Duplicate</button><button onClick={deleteLayer} className="flex-1 bg-red-500/20 text-red-300 text-[10px] py-1.5 rounded-lg">🗑 Delete</button></div></div>
+                  {selectedLayer && (<div className="glass-card p-4 space-y-4"><div className="text-[10px] font-bold text-[#FF5C00] uppercase tracking-wider">Transform</div><div className="grid grid-cols-2 gap-2"><div><label className="text-[9px] block">X</label><input type="number" value={selectedLayer.x} onChange={e => updateLayer('x', parseInt(e.target.value)||0)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs border border-white/5" /></div><div><label className="text-[9px] block">Y</label><input type="number" value={selectedLayer.y} onChange={e => updateLayer('y', parseInt(e.target.value)||0)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div></div>
+                  {selectedLayer.type === 'text' && (<><div><label className="text-[9px]">Text</label><input value={selectedLayer.content} onChange={e => updateLayer('content', e.target.value)} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div><div><label className="text-[9px]">Font Size</label><input type="number" value={selectedLayer.fontSize} onChange={e => updateLayer('fontSize', parseInt(e.target.value))} className="w-full bg-black/60 rounded-lg p-1.5 text-xs" /></div><div><label className="text-[9px]">Color</label><input type="color" value={selectedLayer.color} onChange={e => updateLayer('color', e.target.value)} className="w-full h-8 bg-black rounded" /></div></>)}
+                  {selectedLayer.type === 'rect' && (<><div className="grid grid-cols-2 gap-2"><div><label className="text-[9px]">W</label><input type="number" value={selectedLayer.w} onChange={e => updateLayer('w', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div><div><label className="text-[9px]">H</label><input type="number" value={selectedLayer.h} onChange={e => updateLayer('h', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div></div><div><label className="text-[9px]">Radius</label><input type="number" value={selectedLayer.radius} onChange={e => updateLayer('radius', parseInt(e.target.value))} className="w-full bg-black/60 rounded p-1.5 text-xs" /></div><div><label className="text-[9px]">Fill Color</label><input type="color" value={selectedLayer.color} onChange={e => updateLayer('color', e.target.value)} className="w-full h-8" /></div><div><label className="text-[9px]">Stroke</label><input type="color" value={selectedLayer.stroke || '#FFFFFF'} onChange={e => updateLayer('stroke', e.target.value)} className="w-full h-8" /></div></>)}
+                  </div>)}
                 </div>
               )}
               {activeTab === 'adjust' && (
-                <div className="glass-panel rounded-xl p-4 space-y-4 animate-fadeIn">
-                  {['exposure','contrast','saturation','warmth','tint','highlights','shadows'].map(param => {
-                    const minMap = { exposure: -2, contrast: -1, saturation: -1, warmth: -1, tint: -1, highlights: -1, shadows: -1 };
-                    const maxMap = { exposure: 2, contrast: 1, saturation: 1, warmth: 1, tint: 1, highlights: 1, shadows: 1 };
-                    const step = 0.02;
-                    const label = param.charAt(0).toUpperCase() + param.slice(1);
-                    return (
-                      <div key={param}>
-                        <div className="flex justify-between text-xs text-gray-400 mb-1"><span>{label}</span><span className="font-mono text-blue-400">{adjustments[param].toFixed(2)}</span></div>
-                        <input type="range" min={minMap[param]} max={maxMap[param]} step={step} value={adjustments[param]} onChange={e => setAdjustments(p => ({...p, [param]: parseFloat(e.target.value)}))} onMouseUp={commitToHistory} onTouchEnd={commitToHistory} className="premium-slider" />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {activeTab === 'presets' && (
-                <div className="glass-panel rounded-xl p-3 grid gap-2 animate-fadeIn">
-                  {Object.keys(FILTERS).map(name => (
-                    <button key={name} onClick={() => applyPreset(name)} className="btn-action w-full py-2.5 px-3 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl text-xs font-semibold flex justify-between">
-                      <span>{name}</span><span className="text-blue-400 text-[10px]">APPLY</span>
-                    </button>
-                  ))}
+                <div className="animate-float glass-card p-5 space-y-5">
+                  <div><div className="flex justify-between text-[11px]"><span>Exposure</span><span>{coreAdj.exposure.toFixed(2)} EV</span></div><input type="range" min="-1.5" max="1.5" step="0.02" value={coreAdj.exposure} onChange={e => setCoreAdj(p => ({...p, exposure: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
+                  <div><div className="flex justify-between text-[11px]"><span>Contrast</span><span>{coreAdj.contrast.toFixed(2)}</span></div><input type="range" min="-0.8" max="1.2" step="0.02" value={coreAdj.contrast} onChange={e => setCoreAdj(p => ({...p, contrast: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
+                  <div><div className="flex justify-between text-[11px]"><span>Thermal Bias</span><span>{coreAdj.warmth.toFixed(2)}</span></div><input type="range" min="-1" max="1" step="0.02" value={coreAdj.warmth} onChange={e => setCoreAdj(p => ({...p, warmth: parseFloat(e.target.value)}))} className="slider-neo w-full" /></div>
+                  <div><div className="flex justify-between text-[11px]"><span>Global Saturation</span><span>{globalSat}%</span></div><input type="range" min="-60" max="60" value={globalSat} onChange={e => setGlobalSat(parseInt(e.target.value))} className="slider-neo w-full" /></div>
                 </div>
               )}
             </div>
@@ -563,17 +434,13 @@
     );
   };
 
-  // ========== APP ROOT ==========
   const App = () => {
-    const [user, setUser] = useState(() => {
-      const saved = localStorage.getItem('luminor_studio_active_user');
+    const [session, setSession] = useState(() => {
+      const saved = localStorage.getItem('luminor_session');
       return saved ? JSON.parse(saved) : null;
     });
-    const handleAuth = (data) => { setUser(data); localStorage.setItem('luminor_studio_active_user', JSON.stringify(data)); };
-    const handleLogout = () => { setUser(null); localStorage.removeItem('luminor_studio_active_user'); };
-    return user ? <PhotoEditor onLogout={handleLogout} /> : <AuthGuard onAuthSuccess={handleAuth} />;
+    return session ? <StudioWorkstation session={session} onLogout={() => { setSession(null); localStorage.removeItem('luminor_session'); }} /> : <AuthGate onAuth={(data) => { setSession(data); localStorage.setItem('luminor_session', JSON.stringify(data)); }} />;
   };
-
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
