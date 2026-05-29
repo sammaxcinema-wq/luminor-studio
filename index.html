@@ -33,23 +33,23 @@
       padding: 0;
     }
 
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }
 
     .glass-panel { 
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
     .glass-input { 
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-subtle);
-      border-radius: 10px;
+      border-radius: 12px;
       transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
       color: white;
     }
@@ -77,16 +77,21 @@
     }
 
     .btn-action:active {
-      transform: scale(0.97) translateY(0.5px);
+      transform: scale(0.96) translateY(0.5px);
+    }
+
+    .slider-touch-target {
+      padding-top: 10px;
+      padding-bottom: 10px;
     }
 
     @keyframes fadeIn { 
-      from { opacity: 0; transform: translateY(6px); } 
+      from { opacity: 0; transform: translateY(8px); } 
       to { opacity: 1; transform: translateY(0); } 
     }
 
     .animate-fadeIn { 
-      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes spin {
@@ -95,6 +100,19 @@
 
     .animate-spin {
       animation: spin 1s linear infinite;
+    }
+
+    /* custom file upload */
+    .file-input-label {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .file-input-label:active {
+      transform: scale(0.96);
+    }
+    .drag-over {
+      border-color: var(--brand-primary);
+      background: rgba(47, 102, 246, 0.05);
     }
   </style>
 </head>
@@ -105,108 +123,11 @@
 <script type="text/babel">
   const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-  // ========== VALIDATION ==========
+  // ========== VALIDATION & UTILS ==========
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePassword = (password) => password && password.length >= 6;
 
-  // ========== IMAGE PROCESSING ==========
-  function catmullRom(p0, p1, p2, p3, t) {
-    const t2 = t * t, t3 = t2 * t;
-    return 0.5 * (
-      2 * p1 +
-      (-p0 + p2) * t +
-      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-      (-p0 + 3 * p1 - 3 * p2 + p3) * t3
-    );
-  }
-
-  function interpolateCurve(points, numPoints = 256) {
-    if (points.length < 2) return new Uint8ClampedArray(numPoints).fill(0);
-    
-    const sorted = [...points].sort((a, b) => a.x - b.x);
-    let extended = [...sorted];
-    if (extended[0].x > 0) extended.unshift({ x: 0, y: extended[0].y });
-    if (extended[extended.length - 1].x < 1) extended.push({ x: 1, y: extended[extended.length - 1].y });
-    
-    const result = new Uint8ClampedArray(numPoints);
-    for (let i = 0; i < numPoints; i++) {
-      const x = i / (numPoints - 1);
-      let idx = 0;
-      while (idx < extended.length - 2 && extended[idx + 1].x < x) idx++;
-      
-      const p0 = extended[Math.max(0, idx - 1)];
-      const p1 = extended[idx];
-      const p2 = extended[idx + 1];
-      const p3 = extended[Math.min(extended.length - 1, idx + 2)];
-      
-      const t = (x - p1.x) / (p2.x - p1.x);
-      const value = catmullRom(p0.y, p1.y, p2.y, p3.y, t);
-      result[i] = Math.min(255, Math.max(0, Math.floor(value * 255)));
-    }
-    return result;
-  }
-
-  function processImage(srcData, dstData, adjustments) {
-    const { exposure, contrast, saturation, highlights, shadows, warmth, tint, vibrancy } = adjustments;
-    
-    const expFactor = Math.pow(2, exposure);
-    const cont = contrast + 1;
-    const hl = highlights * 0.5;
-    const sh = shadows * 0.5;
-
-    for (let i = 0; i < srcData.length; i += 4) {
-      let r = srcData[i] / 255;
-      let g = srcData[i + 1] / 255;
-      let b = srcData[i + 2] / 255;
-      const a = srcData[i + 3] / 255;
-
-      // Exposure & contrast
-      r *= expFactor;
-      g *= expFactor;
-      b *= expFactor;
-
-      r = ((r - 0.5) * cont) + 0.5;
-      g = ((g - 0.5) * cont) + 0.5;
-      b = ((b - 0.5) * cont) + 0.5;
-
-      // Highlights & shadows
-      r = Math.pow(Math.max(0, r), 1 + hl) * (1 - sh) + sh;
-      g = Math.pow(Math.max(0, g), 1 + hl) * (1 - sh) + sh;
-      b = Math.pow(Math.max(0, b), 1 + hl) * (1 - sh) + sh;
-
-      // Warmth (shift RGB)
-      r += warmth * 0.05;
-      b -= warmth * 0.05;
-
-      // Tint (shift G)
-      g += tint * 0.05;
-
-      // Saturation
-      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-      r = gray + (r - gray) * (1 + saturation);
-      g = gray + (g - gray) * (1 + saturation);
-      b = gray + (b - gray) * (1 + saturation);
-
-      // Vibrancy (boost saturation for less saturated colors)
-      const maxC = Math.max(r, g, b);
-      const minC = Math.min(r, g, b);
-      const chroma = maxC - minC;
-      if (chroma > 0) {
-        const boost = vibrancy * (1 - chroma);
-        r += (r - gray) * boost * 0.5;
-        g += (g - gray) * boost * 0.5;
-        b += (b - gray) * boost * 0.5;
-      }
-
-      // Clamp
-      dstData[i] = Math.min(255, Math.max(0, Math.round(r * 255)));
-      dstData[i + 1] = Math.min(255, Math.max(0, Math.round(g * 255)));
-      dstData[i + 2] = Math.min(255, Math.max(0, Math.round(b * 255)));
-      dstData[i + 3] = srcData[i + 3];
-    }
-  }
-
-  // ========== FILTER PRESETS ==========
+  // ========== FILTER PRESETS (professional grade) ==========
   const FILTERS = {
     'None': { exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 },
     'Warm': { exposure: 0.2, contrast: 0.1, saturation: 0.15, highlights: -0.1, shadows: 0.1, warmth: 0.4, tint: -0.1, vibrancy: 0 },
@@ -218,7 +139,57 @@
     'Deep': { exposure: -0.2, contrast: 0.4, saturation: 0.2, highlights: 0.1, shadows: -0.3, warmth: 0.2, tint: 0, vibrancy: 0.2 }
   };
 
-  // ========== AUTH COMPONENT ==========
+  const DEFAULT_ADJUSTMENTS = FILTERS['None'];
+
+  // ========== IMAGE PROCESSING ENGINE (real-time high performance) ==========
+  function processImage(srcData, dstData, adjustments) {
+    const { exposure, contrast, saturation, highlights, shadows, warmth, tint, vibrancy } = adjustments;
+    
+    const expFactor = Math.pow(2, exposure);
+    const cont = contrast + 1;
+    const hl = highlights * 0.4;
+    const sh = shadows * 0.4;
+
+    for (let i = 0; i < srcData.length; i += 4) {
+      let r = srcData[i] / 255;
+      let g = srcData[i + 1] / 255;
+      let b = srcData[i + 2] / 255;
+
+      r *= expFactor; g *= expFactor; b *= expFactor;
+      r = ((r - 0.5) * cont) + 0.5;
+      g = ((g - 0.5) * cont) + 0.5;
+      b = ((b - 0.5) * cont) + 0.5;
+
+      r = Math.pow(Math.max(0, r), 1 + hl) * (1 - sh) + sh;
+      g = Math.pow(Math.max(0, g), 1 + hl) * (1 - sh) + sh;
+      b = Math.pow(Math.max(0, b), 1 + hl) * (1 - sh) + sh;
+
+      r += warmth * 0.06; b -= warmth * 0.06;
+      g += tint * 0.05;
+
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = gray + (r - gray) * (1 + saturation);
+      g = gray + (g - gray) * (1 + saturation);
+      b = gray + (b - gray) * (1 + saturation);
+
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const chroma = maxC - minC;
+      if (chroma > 0) {
+        const boost = vibrancy * (1 - chroma);
+        r += (r - gray) * boost * 0.5;
+        g += (g - gray) * boost * 0.5;
+        b += (b - gray) * boost * 0.5;
+      }
+
+      dstData[i] = Math.min(255, Math.max(0, Math.round(r * 255)));
+      dstData[i + 1] = Math.min(255, Math.max(0, Math.round(g * 255)));
+      dstData[i + 2] = Math.min(255, Math.max(0, Math.round(b * 255)));
+      dstData[i + 3] = srcData[i + 3];
+    }
+  }
+
+  // ========== AUTH GUARD COMPONENT ==========
   const AuthGuard = ({ onAuthSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -227,7 +198,8 @@
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      if (!email || !validateEmail(email)) {
+      const cleanEmail = email.trim();
+      if (!cleanEmail || !validateEmail(cleanEmail)) {
         setError('Please enter a valid email address');
         return;
       }
@@ -235,41 +207,41 @@
         setError('Password must be at least 6 characters');
         return;
       }
-      
       setError('');
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        onAuthSuccess({ email, token: 'lum_' + Date.now() });
-      }, 800);
+        onAuthSuccess({ email: cleanEmail, token: 'lum_' + Date.now() });
+      }, 750);
     };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040507]">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
-        
         <div className="glass-panel w-full max-w-md rounded-2xl p-6 md:p-8 relative z-10 animate-fadeIn">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(47,102,246,0.4)] mb-3">
-              <span className="font-bold text-xl">✓</span>
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_24px_rgba(47,102,246,0.45)] mb-3">
+              <span className="font-bold text-xl text-white">✓</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Luminor Studio</h1>
-            <p className="text-xs text-gray-400 mt-2">Professional Photo Editor</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Luminor Studio Pro</h1>
+            <p className="text-xs text-gray-400 mt-2">Production-Ready Single-File Image Workstation</p>
           </div>
-
-          {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 animate-fadeIn">{error}</div>}
-
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 animate-fadeIn">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-gray-400 mb-2 block">Email</label>
+              <label className="text-xs font-semibold text-gray-400 mb-2 block">Email Address</label>
               <input 
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="glass-input w-full px-4 py-3 text-sm"
-                placeholder="your@email.com"
+                className="glass-input w-full px-4 py-3 text-sm focus:outline-none"
+                placeholder="developer@studio.com"
                 autoComplete="email"
               />
             </div>
@@ -280,7 +252,7 @@
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="glass-input w-full px-4 py-3 text-sm"
+                className="glass-input w-full px-4 py-3 text-sm focus:outline-none"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
@@ -288,17 +260,19 @@
             <button
               type="submit"
               disabled={loading}
-              className="btn-action w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition shadow-[0_12px_32px_rgba(47,102,246,0.25)]"
+              className="btn-action w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition mt-2 shadow-[0_12px_32px_rgba(47,102,246,0.3)]"
             >
               {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /><span>Signing in...</span></>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Authenticating Pro Session...</span>
+                </div>
               ) : (
-                'Sign In'
+                'Access Studio Workspace'
               )}
             </button>
           </form>
-
-          <p className="text-[10px] text-gray-500 mt-6 text-center">Demo: any email + 6+ char password</p>
+          <p className="text-[10px] text-gray-500 mt-6 text-center">Demo credentials: any valid email & 6+ char password</p>
         </div>
       </div>
     );
@@ -308,10 +282,12 @@
   const Slider = ({ label, value, min, max, step, onChange, onCommit, unit = '' }) => {
     const id = React.useId();
     return (
-      <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-400 mb-2">
-          <label htmlFor={id} className="font-medium">{label}</label>
-          <span className="font-mono text-white/80">{value.toFixed(2)}{unit}</span>
+      <div className="mb-3 slider-touch-target">
+        <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+          <label htmlFor={id} className="font-medium tracking-wide">{label}</label>
+          <span className="font-mono text-blue-400 bg-blue-500/5 px-1.5 py-0.5 rounded border border-blue-500/10">
+            {value > 0 ? `+${value.toFixed(2)}` : value.toFixed(2)}{unit}
+          </span>
         </div>
         <input
           id={id}
@@ -323,320 +299,420 @@
           onChange={(e) => onChange(parseFloat(e.target.value))}
           onMouseUp={onCommit}
           onTouchEnd={onCommit}
-          className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-600"
+          className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-600 focus:outline-none"
         />
       </div>
     );
   };
 
-  // ========== MAIN EDITOR ==========
+  // ========== MAIN PRO EDITOR ==========
   const PhotoEditor = ({ user, onLogout }) => {
-    const [image, setImage] = useState(null);
-    const [adjustments, setAdjustments] = useState({
-      exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0,
-      warmth: 0, tint: 0, vibrancy: 0
+    // state
+    const [adjustments, setAdjustments] = useState(() => {
+      const cached = localStorage.getItem('luminor_studio_save_state');
+      if (cached) {
+        try { return JSON.parse(cached); } catch(e) { console.error(e); }
+      }
+      return { ...DEFAULT_ADJUSTMENTS };
     });
-    const [history, setHistory] = useState([adjustments]);
+    const [history, setHistory] = useState([{ ...adjustments }]);
     const [historyIdx, setHistoryIdx] = useState(0);
     const [splitPos, setSplitPos] = useState(0.5);
     const [selectedFilter, setSelectedFilter] = useState('None');
     const [mobileTab, setMobileTab] = useState('adjust');
     const [showMobilePanel, setShowMobilePanel] = useState(false);
-
+    const [imageLoaded, setImageLoaded] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    
+    // canvas refs
     const canvasRef = useRef(null);
-    const originalRef = useRef(null);
-    const processedRef = useRef(null);
+    const originalRef = useRef(null);      // ImageData original
+    const processedRef = useRef(null);     // ImageData processed
+    const offscreenOrigCanvas = useRef(null);
+    const offscreenProcCanvas = useRef(null);
+    const rAFScheduled = useRef(false);
+    const currentImageDimensions = useRef({ w: 1200, h: 800 });
 
-    // Generate test image
-    useEffect(() => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1000;
-      canvas.height = 667;
-      const ctx = canvas.getContext('2d');
-
-      // Base gradient
-      const grad = ctx.createLinearGradient(0, 0, 1000, 667);
-      grad.addColorStop(0, '#1a472a');
-      grad.addColorStop(0.5, '#2d5a4a');
-      grad.addColorStop(1, '#1f3d3a');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1000, 667);
-
-      // Light overlay
-      const light = ctx.createRadialGradient(700, 0, 0, 700, 0, 1000);
-      light.addColorStop(0, 'rgba(255,200,100,0.2)');
-      light.addColorStop(1, 'rgba(255,200,100,0)');
-      ctx.fillStyle = light;
-      ctx.fillRect(0, 0, 1000, 667);
-
-      // Shapes
-      ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
-      ctx.beginPath();
-      ctx.ellipse(300, 267, 350, 250, -0.3, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(200, 100, 255, 0.08)';
-      ctx.beginPath();
-      ctx.ellipse(750, 400, 300, 300, 0.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Accent lines
-      ctx.strokeStyle = 'rgba(100, 220, 255, 0.3)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(200, 200, 80, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.strokeStyle = 'rgba(255, 150, 100, 0.25)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(500, 0);
-      ctx.lineTo(500, 667);
-      ctx.stroke();
-
-      const imgData = ctx.getImageData(0, 0, 1000, 667);
-      setImage(imgData);
-      originalRef.current = imgData;
-      processedRef.current = new ImageData(
-        new Uint8ClampedArray(imgData.data.length),
-        imgData.width,
-        imgData.height
-      );
+    // Helper: reload imageData into offscreen + reprocess
+    const updateCanvasBuffers = useCallback((newOriginalImageData) => {
+      if (!newOriginalImageData) return;
+      const w = newOriginalImageData.width;
+      const h = newOriginalImageData.height;
+      currentImageDimensions.current = { w, h };
+      
+      originalRef.current = newOriginalImageData;
+      // create fresh processed image data (copy of original for processing)
+      const newProcessed = new ImageData(new Uint8ClampedArray(newOriginalImageData.data), w, h);
+      processedRef.current = newProcessed;
+      
+      // update offscreen origin canvas
+      if (!offscreenOrigCanvas.current) {
+        offscreenOrigCanvas.current = document.createElement('canvas');
+      }
+      offscreenOrigCanvas.current.width = w;
+      offscreenOrigCanvas.current.height = h;
+      offscreenOrigCanvas.current.getContext('2d').putImageData(newOriginalImageData, 0, 0);
+      
+      if (!offscreenProcCanvas.current) {
+        offscreenProcCanvas.current = document.createElement('canvas');
+      }
+      offscreenProcCanvas.current.width = w;
+      offscreenProcCanvas.current.height = h;
+      offscreenProcCanvas.current.getContext('2d').putImageData(newProcessed, 0, 0);
+      
+      setImageLoaded(true);
+      requestRender();
     }, []);
 
-    // Draw split view
-    useEffect(() => {
-      if (!image || !canvasRef.current) return;
-
-      const canvas = canvasRef.current;
+    // Generate demo abstract professional asset
+    const generateDemoImage = useCallback(() => {
+      const w = 1200, h = 800;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      canvas.width = image.width;
-      canvas.height = image.height;
-
-      try {
-        processImage(originalRef.current.data, processedRef.current.data, adjustments);
-
-        const splitX = image.width * splitPos;
-        
-        const origCanvas = document.createElement('canvas');
-        origCanvas.width = image.width;
-        origCanvas.height = image.height;
-        origCanvas.getContext('2d').putImageData(originalRef.current, 0, 0);
-
-        const procCanvas = document.createElement('canvas');
-        procCanvas.width = image.width;
-        procCanvas.height = image.height;
-        procCanvas.getContext('2d').putImageData(processedRef.current, 0, 0);
-
-        ctx.drawImage(origCanvas, 0, 0, splitX, image.height, 0, 0, splitX, image.height);
-        ctx.drawImage(procCanvas, splitX, 0, image.width - splitX, image.height, splitX, 0, image.width - splitX, image.height);
-
-        // Divider
-        ctx.strokeStyle = '#2F66F6';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(splitX, 0);
-        ctx.lineTo(splitX, image.height);
-        ctx.stroke();
-      } catch (e) {
-        console.error('Draw error:', e);
+      
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#111e25');
+      grad.addColorStop(0.4, '#1b3834');
+      grad.addColorStop(1, '#18223c');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      
+      const radialLight = ctx.createRadialGradient(850, 200, 20, 850, 200, 700);
+      radialLight.addColorStop(0, 'rgba(255, 195, 115, 0.35)');
+      radialLight.addColorStop(0.6, 'rgba(235, 90, 120, 0.08)');
+      radialLight.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = radialLight;
+      ctx.fillRect(0, 0, w, h);
+      
+      ctx.fillStyle = 'rgba(47, 102, 246, 0.12)';
+      ctx.beginPath();
+      ctx.ellipse(400, 450, 380, 260, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+      ctx.beginPath();
+      ctx.ellipse(850, 500, 280, 280, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 1;
+      const stepGrid = 40;
+      for (let x = 0; x < w; x += stepGrid) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
       }
-    }, [image, adjustments, splitPos]);
-
+      for (let y = 0; y < h; y += stepGrid) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      
+      ctx.strokeStyle = 'rgba(47, 102, 246, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(400, 450, 120, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      return ctx.getImageData(0, 0, w, h);
+    }, []);
+    
+    // load custom image from file
+    const loadImageFromFile = useCallback((file) => {
+      if (!file || !file.type.startsWith('image/')) return;
+      setIsUploading(true);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const w = img.width;
+          const h = img.height;
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = w;
+          tempCanvas.height = h;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const imageData = ctx.getImageData(0, 0, w, h);
+          
+          // reset adjustments to default for fresh start
+          const cleanState = { ...DEFAULT_ADJUSTMENTS };
+          setAdjustments(cleanState);
+          setSelectedFilter('None');
+          setHistory([cleanState]);
+          setHistoryIdx(0);
+          localStorage.setItem('luminor_studio_save_state', JSON.stringify(cleanState));
+          
+          updateCanvasBuffers(imageData);
+          setIsUploading(false);
+          URL.revokeObjectURL(reader.result);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }, [updateCanvasBuffers]);
+    
+    // reset to demo image
+    const resetToDemoImage = useCallback(() => {
+      const demoImgData = generateDemoImage();
+      const cleanState = { ...DEFAULT_ADJUSTMENTS };
+      setAdjustments(cleanState);
+      setSelectedFilter('None');
+      setHistory([cleanState]);
+      setHistoryIdx(0);
+      localStorage.setItem('luminor_studio_save_state', JSON.stringify(cleanState));
+      updateCanvasBuffers(demoImgData);
+    }, [generateDemoImage, updateCanvasBuffers]);
+    
+    // Request render with rAF
+    const requestRender = useCallback(() => {
+      if (rAFScheduled.current || !imageLoaded || !originalRef.current) return;
+      rAFScheduled.current = true;
+      requestAnimationFrame(() => {
+        rAFScheduled.current = false;
+        const mainCanvas = canvasRef.current;
+        if (!mainCanvas || !originalRef.current || !processedRef.current) return;
+        const ctx = mainCanvas.getContext('2d');
+        if (!ctx) return;
+        
+        const w = originalRef.current.width;
+        const h = originalRef.current.height;
+        if (mainCanvas.width !== w || mainCanvas.height !== h) {
+          mainCanvas.width = w;
+          mainCanvas.height = h;
+        }
+        
+        try {
+          processImage(originalRef.current.data, processedRef.current.data, adjustments);
+          offscreenProcCanvas.current.getContext('2d').putImageData(processedRef.current, 0, 0);
+          
+          const currentSplitX = w * splitPos;
+          ctx.clearRect(0, 0, w, h);
+          if (currentSplitX > 0) {
+            ctx.drawImage(offscreenOrigCanvas.current, 0, 0, currentSplitX, h, 0, 0, currentSplitX, h);
+          }
+          if (currentSplitX < w) {
+            ctx.drawImage(offscreenProcCanvas.current, currentSplitX, 0, w - currentSplitX, h, currentSplitX, 0, w - currentSplitX, h);
+          }
+          
+          ctx.strokeStyle = '#2F66F6';
+          ctx.lineWidth = 6;
+          ctx.shadowBlur = 16;
+          ctx.shadowColor = 'rgba(47, 102, 246, 0.6)';
+          ctx.beginPath();
+          ctx.moveTo(currentSplitX, 0);
+          ctx.lineTo(currentSplitX, h);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        } catch(err) {
+          console.warn(err);
+        }
+      });
+    }, [imageLoaded, adjustments, splitPos]);
+    
+    // effect to trigger render when dependencies change
+    useEffect(() => {
+      requestRender();
+    }, [requestRender, adjustments, splitPos]);
+    
+    // init with demo image
+    useEffect(() => {
+      const initImage = generateDemoImage();
+      originalRef.current = initImage;
+      const procImg = new ImageData(new Uint8ClampedArray(initImage.data), initImage.width, initImage.height);
+      processedRef.current = procImg;
+      offscreenOrigCanvas.current = document.createElement('canvas');
+      offscreenOrigCanvas.current.width = initImage.width;
+      offscreenOrigCanvas.current.height = initImage.height;
+      offscreenOrigCanvas.current.getContext('2d').putImageData(initImage, 0, 0);
+      offscreenProcCanvas.current = document.createElement('canvas');
+      offscreenProcCanvas.current.width = initImage.width;
+      offscreenProcCanvas.current.height = initImage.height;
+      offscreenProcCanvas.current.getContext('2d').putImageData(procImg, 0, 0);
+      currentImageDimensions.current = { w: initImage.width, h: initImage.height };
+      setImageLoaded(true);
+      requestRender();
+    }, []);
+    
     const updateAdjustment = (key, value) => {
-      setAdjustments(prev => ({ ...prev, [key]: value }));
+      setAdjustments(prev => {
+        const next = { ...prev, [key]: value };
+        localStorage.setItem('luminor_studio_save_state', JSON.stringify(next));
+        return next;
+      });
     };
-
+    
     const commitHistory = () => {
-      const newHistory = history.slice(0, historyIdx + 1);
-      newHistory.push({ ...adjustments });
-      setHistory(newHistory);
-      setHistoryIdx(newHistory.length - 1);
+      const updatedHistory = history.slice(0, historyIdx + 1);
+      updatedHistory.push({ ...adjustments });
+      setHistory(updatedHistory);
+      setHistoryIdx(updatedHistory.length - 1);
     };
-
+    
     const applyFilter = (filterName) => {
       setSelectedFilter(filterName);
-      setAdjustments(FILTERS[filterName]);
-      commitHistory();
+      const chosenConfig = FILTERS[filterName];
+      setAdjustments(chosenConfig);
+      localStorage.setItem('luminor_studio_save_state', JSON.stringify(chosenConfig));
+      const updatedHistory = history.slice(0, historyIdx + 1);
+      updatedHistory.push({ ...chosenConfig });
+      setHistory(updatedHistory);
+      setHistoryIdx(updatedHistory.length - 1);
     };
-
+    
     const undo = () => {
       if (historyIdx > 0) {
-        setHistoryIdx(historyIdx - 1);
-        setAdjustments(history[historyIdx - 1]);
+        const targetIdx = historyIdx - 1;
+        setHistoryIdx(targetIdx);
+        setAdjustments({ ...history[targetIdx] });
+        localStorage.setItem('luminor_studio_save_state', JSON.stringify(history[targetIdx]));
       }
     };
-
+    
     const redo = () => {
       if (historyIdx < history.length - 1) {
-        setHistoryIdx(historyIdx + 1);
-        setAdjustments(history[historyIdx + 1]);
+        const targetIdx = historyIdx + 1;
+        setHistoryIdx(targetIdx);
+        setAdjustments({ ...history[targetIdx] });
+        localStorage.setItem('luminor_studio_save_state', JSON.stringify(history[targetIdx]));
       }
     };
-
-    const reset = () => {
-      setAdjustments({ exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 });
+    
+    const resetAdjustmentsOnly = () => {
+      const cleanState = { ...DEFAULT_ADJUSTMENTS };
+      setAdjustments(cleanState);
       setSelectedFilter('None');
       setHistoryIdx(0);
-      setHistory([{ exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 }]);
+      setHistory([cleanState]);
+      localStorage.setItem('luminor_studio_save_state', JSON.stringify(cleanState));
     };
-
-    // Keyboard shortcuts
+    
     useEffect(() => {
-      const handler = (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-          e.preventDefault();
-          undo();
-        } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-          e.preventDefault();
-          redo();
+      const handleKey = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+          e.preventDefault(); undo();
+        } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+          e.preventDefault(); redo();
         }
       };
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
+      window.addEventListener('keydown', handleKey);
+      return () => window.removeEventListener('keydown', handleKey);
     }, [historyIdx, history]);
-
-    const handleDrag = (e) => {
+    
+    const handleDragMove = useCallback((e) => {
       if (!canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      setSplitPos(Math.max(0, Math.min(1, x / rect.width)));
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const targetPos = (clientX - rect.left) / rect.width;
+      setSplitPos(Math.max(0, Math.min(1, targetPos)));
+    }, []);
+    
+    const handleFileSelect = (e) => {
+      if (e.target.files && e.target.files[0]) loadImageFromFile(e.target.files[0]);
     };
-
+    
     return (
-      <div className="flex flex-col h-screen w-full bg-[#040507]">
-        {/* Header */}
+      <div className="flex flex-col h-screen w-full bg-[#040507] overflow-hidden">
         <header className="h-14 shrink-0 glass-panel border-b border-white/5 flex items-center justify-between px-4 z-30">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">✓</div>
-            <span className="font-bold text-sm hidden sm:inline">Luminor</span>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm shadow-[0_0_14px_rgba(47,102,246,0.3)]">✓</div>
+            <span className="font-bold text-sm tracking-tight hidden sm:inline">Luminor Studio <span className="text-xs text-blue-500 font-medium px-1 bg-blue-500/10 rounded ml-1 border border-blue-500/20">PRO</span></span>
           </div>
           <div className="flex items-center gap-3">
+            <label className="btn-action px-3 h-8 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-gray-300 cursor-pointer flex items-center gap-1">
+              📷 Upload
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileSelect} className="hidden" />
+            </label>
+            <button onClick={resetToDemoImage} className="btn-action px-3 h-8 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-gray-300">Demo Reset</button>
             <div className="flex gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
-              <button onClick={undo} disabled={historyIdx === 0} className="btn-action px-2 py-1 text-xs hover:text-white disabled:opacity-30 text-gray-400">↩</button>
-              <button onClick={redo} disabled={historyIdx === history.length - 1} className="btn-action px-2 py-1 text-xs hover:text-white disabled:opacity-30 text-gray-400">↪</button>
+              <button onClick={undo} disabled={historyIdx === 0} className="btn-action w-7 h-7 text-xs rounded hover:bg-white/5 text-gray-300 disabled:opacity-20">↩</button>
+              <button onClick={redo} disabled={historyIdx === history.length - 1} className="btn-action w-7 h-7 text-xs rounded hover:bg-white/5 text-gray-300 disabled:opacity-20">↪</button>
             </div>
-            <button onClick={reset} className="btn-action px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-gray-400 hover:text-white transition">Reset</button>
-            <button onClick={onLogout} className="btn-action px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 text-red-400 transition hidden sm:block">Exit</button>
+            <button onClick={resetAdjustmentsOnly} className="btn-action px-3 h-8 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-gray-300 hidden sm:inline-flex">Reset Adjust</button>
+            <button onClick={onLogout} className="btn-action px-3 h-8 text-xs bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 text-red-400 transition hidden sm:inline-flex">Exit</button>
           </div>
         </header>
-
+        
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Main Canvas */}
-          <main className="flex-1 bg-[#050507] flex items-center justify-center p-4">
-            {image && (
-              <div className="relative shadow-2xl rounded-xl overflow-hidden border border-white/10 max-w-full max-h-full">
-                <canvas
-                  ref={canvasRef}
-                  className="max-w-full h-auto object-contain cursor-ew-resize block"
-                  onMouseMove={(e) => e.buttons === 1 && handleDrag(e)}
-                  onTouchMove={handleDrag}
+          <main className="flex-1 bg-[#050609] flex items-center justify-center p-4 md:p-8 overflow-hidden">
+            {!imageLoaded || isUploading ? (
+              <div className="flex flex-col items-center gap-2"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><p className="text-xs text-gray-500">Processing image...</p></div>
+            ) : (
+              <div className="relative shadow-[0_24px_70px_rgba(0,0,0,0.7)] rounded-xl overflow-hidden border border-white/10 max-w-full max-h-full">
+                <canvas ref={canvasRef} className="max-w-full h-auto max-h-[calc(100vh-12rem)] object-contain cursor-ew-resize block touch-none"
+                  onMouseMove={(e) => e.buttons === 1 && handleDragMove(e)} onMouseDown={handleDragMove}
+                  onTouchMove={handleDragMove} onTouchStart={handleDragMove}
                 />
+                <div className="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur text-[10px] uppercase font-bold text-gray-400 rounded border border-white/5 pointer-events-none">◀ Original</div>
+                <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur text-[10px] uppercase font-bold text-blue-400 rounded border border-blue-500/20 pointer-events-none">Enhanced ▶</div>
               </div>
             )}
           </main>
-
-          {/* Desktop Sidebar */}
-          <aside className="w-80 border-l border-white/5 bg-[#090a0d] p-4 hidden lg:flex flex-col gap-4 overflow-y-auto shrink-0">
-            {/* Filters */}
-            <div className="glass-panel rounded-lg p-4">
-              <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase">Filters</h3>
+          
+          <aside className="w-80 border-l border-white/5 bg-[#08090c] p-4 hidden lg:flex flex-col gap-4 overflow-y-auto shrink-0 z-20">
+            <div className="glass-panel rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-gray-400 mb-3 tracking-wider uppercase">Filter Presets</h3>
               <div className="grid grid-cols-2 gap-2">
                 {Object.keys(FILTERS).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => applyFilter(f)}
-                    className={`btn-action px-3 py-2 text-xs rounded-lg border transition ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
-                  >
-                    {f}
-                  </button>
+                  <button key={f} onClick={() => applyFilter(f)} className={`btn-action py-2 px-3 text-xs rounded-lg border transition font-medium ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-[0_4px_12px_rgba(47,102,246,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{f}</button>
                 ))}
               </div>
             </div>
-
-            {/* Adjustments */}
-            <div className="glass-panel rounded-lg p-4">
-              <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase">Adjustments</h3>
-              <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Highlights" value={adjustments.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('highlights', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Shadows" value={adjustments.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('shadows', v)} onCommit={commitHistory} unit="" />
+            <div className="glass-panel rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-gray-400 mb-4 tracking-wider uppercase">Exposure & Tone</h3>
+              <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} />
+              <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} />
+              <Slider label="Highlights" value={adjustments.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('highlights', v)} onCommit={commitHistory} />
+              <Slider label="Shadows" value={adjustments.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('shadows', v)} onCommit={commitHistory} />
             </div>
-
-            {/* Color */}
-            <div className="glass-panel rounded-lg p-4">
-              <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase">Color</h3>
-              <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Tint" value={adjustments.tint} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('tint', v)} onCommit={commitHistory} unit="" />
-              <Slider label="Vibrancy" value={adjustments.vibrancy} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('vibrancy', v)} onCommit={commitHistory} unit="" />
+            <div className="glass-panel rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-gray-400 mb-4 tracking-wider uppercase">Color Balance</h3>
+              <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} />
+              <Slider label="Vibrancy" value={adjustments.vibrancy} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('vibrancy', v)} onCommit={commitHistory} />
+              <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} />
+              <Slider label="Tint" value={adjustments.tint} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('tint', v)} onCommit={commitHistory} />
             </div>
           </aside>
         </div>
-
+        
         {/* Mobile Bottom Sheet */}
-        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-t border-white/5 rounded-t-2xl transition-transform duration-300 ${showMobilePanel ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div onClick={() => setShowMobilePanel(!showMobilePanel)} className="h-14 flex items-center justify-between px-4 cursor-pointer">
-            <span className="text-xs font-bold text-gray-300 uppercase">{mobileTab === 'filter' ? 'Filters' : 'Adjust'}</span>
-            <span className="text-gray-400">{showMobilePanel ? '✕' : '▲'}</span>
+        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-t border-white/5 rounded-t-2xl transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${showMobilePanel ? 'translate-y-0' : 'translate-y-[calc(100%-56px-env(safe-area-inset-bottom))]'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div onClick={() => setShowMobilePanel(!showMobilePanel)} className="h-14 flex items-center justify-between px-5 cursor-pointer border-b border-white/5 bg-black/20">
+            <span className="text-xs font-bold tracking-wider text-gray-300 uppercase flex items-center gap-2"><span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />{mobileTab === 'filter' ? 'Presets' : 'Adjustments'}</span>
+            <span className="text-xs text-gray-500 font-mono font-bold bg-white/5 px-2 py-1 rounded border border-white/5">{showMobilePanel ? 'DISMISS' : 'EXPAND'}</span>
           </div>
-
-          <div className="p-4 max-h-[50vh] overflow-y-auto space-y-4 bg-[#07080a]">
+          <div className="p-5 max-h-[45vh] overflow-y-auto space-y-2 bg-[#07080a]">
             {mobileTab === 'filter' ? (
-              <div className="grid grid-cols-2 gap-2">
-                {Object.keys(FILTERS).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => { applyFilter(f); setShowMobilePanel(false); }}
-                    className={`btn-action px-3 py-3 text-xs rounded-lg border transition ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
-                  >
-                    {f}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-2 pb-4">
+                {Object.keys(FILTERS).map(f => <button key={f} onClick={() => { applyFilter(f); setShowMobilePanel(false); }} className={`btn-action py-3.5 px-4 text-xs rounded-xl border transition font-semibold ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400'}`}>{f}</button>)}
               </div>
             ) : (
-              <>
-                <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} unit="" />
-                <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} unit="" />
-                <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} unit="" />
-                <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} unit="" />
-                <Slider label="Highlights" value={adjustments.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('highlights', v)} onCommit={commitHistory} unit="" />
-                <Slider label="Shadows" value={adjustments.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('shadows', v)} onCommit={commitHistory} unit="" />
-              </>
+              <div className="pb-6 space-y-1">
+                <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} />
+                <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} />
+                <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} />
+                <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} />
+              </div>
             )}
           </div>
-
-          <nav className="h-14 border-t border-white/5 flex items-center justify-around bg-[#090a0d] shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <button onClick={() => { setMobileTab('adjust'); setShowMobilePanel(true); }} className={`flex flex-col items-center gap-1 text-[10px] ${mobileTab === 'adjust' ? 'text-blue-500' : 'text-gray-400'}`}>
-              <span className="text-lg">⚙</span>Adjust
-            </button>
-            <button onClick={() => { setMobileTab('filter'); setShowMobilePanel(true); }} className={`flex flex-col items-center gap-1 text-[10px] ${mobileTab === 'filter' ? 'text-blue-500' : 'text-gray-400'}`}>
-              <span className="text-lg">✨</span>Filters
-            </button>
-            <button onClick={reset} className="flex flex-col items-center gap-1 text-[10px] text-gray-400">
-              <span className="text-lg">🔄</span>Reset
-            </button>
-            <button onClick={onLogout} className="flex flex-col items-center gap-1 text-[10px] text-red-400">
-              <span className="text-lg">✕</span>Exit
-            </button>
+          <nav className="h-14 border-t border-white/5 flex items-center justify-around bg-[#08090b]">
+            <button onClick={() => { setMobileTab('adjust'); setShowMobilePanel(true); }} className={`flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider transition ${mobileTab === 'adjust' && showMobilePanel ? 'text-blue-500 bg-blue-500/5' : 'text-gray-400'}`}><span className="text-sm">⚙</span>Adjust</button>
+            <button onClick={() => { setMobileTab('filter'); setShowMobilePanel(true); }} className={`flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider transition ${mobileTab === 'filter' && showMobilePanel ? 'text-blue-500 bg-blue-500/5' : 'text-gray-400'}`}><span className="text-sm">✨</span>Presets</button>
+            <button onClick={onLogout} className="flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400/80"><span className="text-sm">✕</span>Exit</button>
           </nav>
         </div>
       </div>
     );
   };
-
-  // ========== APP ==========
+  
   const App = () => {
-    const [user, setUser] = useState(null);
-    return user ? (
-      <PhotoEditor user={user} onLogout={() => setUser(null)} />
-    ) : (
-      <AuthGuard onAuthSuccess={setUser} />
-    );
+    const [user, setUser] = useState(() => {
+      const activeSession = localStorage.getItem('luminor_studio_active_user');
+      return activeSession ? JSON.parse(activeSession) : null;
+    });
+    const handleAuthSuccess = (userData) => { setUser(userData); localStorage.setItem('luminor_studio_active_user', JSON.stringify(userData)); };
+    const handleLogout = () => { setUser(null); localStorage.removeItem('luminor_studio_active_user'); localStorage.removeItem('luminor_studio_save_state'); };
+    return user ? <PhotoEditor user={user} onLogout={handleLogout} /> : <AuthGuard onAuthSuccess={handleAuthSuccess} />;
   };
-
+  
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
