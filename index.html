@@ -607,21 +607,69 @@
     }, []);
 
     useEffect(() => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.src = 'https://images.unsplash.com/photo-1682695796954-bad0d3f3f1a4?w=1000&auto=format';
-      
-      const handleLoad = () => {
+      const generateTestImage = () => {
         try {
+          const width = 1000;
+          const height = 667;
           const canvas = document.createElement('canvas');
-          const aspect = img.width / img.height;
-          canvas.width = Math.min(1000, img.width);
-          canvas.height = canvas.width / aspect;
+          canvas.width = width;
+          canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) throw new Error('Failed to get 2D context');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          
+
+          // Base gradient background
+          const grad = ctx.createLinearGradient(0, 0, width, height);
+          grad.addColorStop(0, '#1a472a');
+          grad.addColorStop(0.5, '#2d5a4a');
+          grad.addColorStop(1, '#1f3d3a');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, width, height);
+
+          // Add atmospheric light
+          const lightGrad = ctx.createRadialGradient(width * 0.7, 0, 0, width * 0.7, 0, width);
+          lightGrad.addColorStop(0, 'rgba(255,200,100,0.15)');
+          lightGrad.addColorStop(1, 'rgba(255,200,100,0)');
+          ctx.fillStyle = lightGrad;
+          ctx.fillRect(0, 0, width, height);
+
+          // Layered geometric shapes with depth
+          ctx.fillStyle = 'rgba(100, 200, 255, 0.08)';
+          ctx.beginPath();
+          ctx.ellipse(width * 0.3, height * 0.4, width * 0.35, height * 0.25, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(200, 100, 255, 0.06)';
+          ctx.beginPath();
+          ctx.ellipse(width * 0.75, height * 0.6, width * 0.3, height * 0.3, 0.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Texture overlay
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const data = imgData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const noise = Math.sin(i * 0.0001) * 10;
+            data[i] += noise;
+            data[i + 1] += noise * 0.5;
+            data[i + 2] += noise * 0.3;
+          }
+          ctx.putImageData(imgData, 0, 0);
+
+          // Bright accent details
+          ctx.strokeStyle = 'rgba(100, 220, 255, 0.3)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(width * 0.2, height * 0.3, 80, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = 'rgba(255, 150, 100, 0.25)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(width * 0.5, 0);
+          ctx.lineTo(width * 0.5, height);
+          ctx.stroke();
+
+          // Get final image data
+          const originalData = ctx.getImageData(0, 0, width, height);
           setOriginalImageData(originalData);
           processedImageDataRef.current = new ImageData(
             new Uint8ClampedArray(originalData.data.length),
@@ -630,55 +678,50 @@
           );
           setImageError(null);
         } catch (err) {
-          setImageError('Failed to process image: ' + err.message);
+          setImageError('Failed to generate test image: ' + err.message);
         }
       };
 
-      const handleError = () => {
-        setImageError('Failed to load image. Please check your connection.');
-      };
-
-      img.addEventListener('load', handleLoad);
-      img.addEventListener('error', handleError);
-
-      return () => {
-        img.removeEventListener('load', handleLoad);
-        img.removeEventListener('error', handleError);
-      };
+      // Generate image immediately without network dependency
+      generateTestImage();
     }, []);
 
     const drawSplitView = useCallback(() => {
-      if (!canvasRef.current || !originalImageData || !processedImageDataRef.current) return;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      
-      const w = originalImageData.width, h = originalImageData.height;
-      
-      if (canvas.width !== w) {
-        canvas.width = w; 
-        canvas.height = h;
-        leftCanvasRef.current.width = w; 
-        leftCanvasRef.current.height = h;
-        rightCanvasRef.current.width = w; 
-        rightCanvasRef.current.height = h;
-        const leftCtx = leftCanvasRef.current.getContext('2d');
-        if (leftCtx) leftCtx.putImageData(originalImageData, 0, 0);
+      try {
+        if (!canvasRef.current || !originalImageData || !processedImageDataRef.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        const w = originalImageData.width, h = originalImageData.height;
+        
+        if (canvas.width !== w) {
+          canvas.width = w; 
+          canvas.height = h;
+          leftCanvasRef.current.width = w; 
+          leftCanvasRef.current.height = h;
+          rightCanvasRef.current.width = w; 
+          rightCanvasRef.current.height = h;
+          const leftCtx = leftCanvasRef.current.getContext('2d');
+          if (leftCtx) leftCtx.putImageData(originalImageData, 0, 0);
+        }
+
+        const rightCtx = rightCanvasRef.current.getContext('2d');
+        if (rightCtx) rightCtx.putImageData(processedImageDataRef.current, 0, 0);
+
+        const splitX = w * splitPos;
+        ctx.drawImage(leftCanvasRef.current, 0, 0, splitX, h, 0, 0, splitX, h);
+        ctx.drawImage(rightCanvasRef.current, splitX, 0, w - splitX, h, splitX, 0, w - splitX, h);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = '#2F66F6';
+        ctx.lineWidth = 4;
+        ctx.moveTo(splitX, 0);
+        ctx.lineTo(splitX, h);
+        ctx.stroke();
+      } catch (err) {
+        console.error('Draw error:', err);
       }
-
-      const rightCtx = rightCanvasRef.current.getContext('2d');
-      if (rightCtx) rightCtx.putImageData(processedImageDataRef.current, 0, 0);
-
-      const splitX = w * splitPos;
-      ctx.drawImage(leftCanvasRef.current, 0, 0, splitX, h, 0, 0, splitX, h);
-      ctx.drawImage(rightCanvasRef.current, splitX, 0, w - splitX, h, splitX, 0, w - splitX, h);
-      
-      ctx.beginPath();
-      ctx.strokeStyle = '#2F66F6';
-      ctx.lineWidth = 4;
-      ctx.moveTo(splitX, 0);
-      ctx.lineTo(splitX, h);
-      ctx.stroke();
     }, [originalImageData, splitPos]);
 
     useEffect(() => {
@@ -739,6 +782,21 @@
 
     const undo = () => { if (historyIdx > 0) { setState(history[historyIdx - 1]); setHistoryIdx(historyIdx - 1); } };
     const redo = () => { if (historyIdx < history.length - 1) { setState(history[historyIdx + 1]); setHistoryIdx(historyIdx + 1); } };
+    
+    // Keyboard shortcuts
+    useEffect(() => {
+      const handleKeyDown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+          e.preventDefault();
+          redo();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [historyIdx, history]);
     
     const handleSplitDrag = (e) => {
       if (!canvasRef.current) return;
@@ -821,13 +879,13 @@
             {imageError && (
               <div className="text-center space-y-2 animate-fadeIn">
                 <p className="text-sm text-red-400 font-mono">{imageError}</p>
-                <p className="text-xs text-gray-500">Using demo image may require internet connection</p>
+                <p className="text-xs text-gray-500">Please reload the page to try again</p>
               </div>
             )}
             {!originalImageData && !imageError && (
               <div className="text-center space-y-2 animate-pulse">
                 <div className="w-8 h-8 border-2 border-[#2F66F6] border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs text-gray-500 font-mono">Loading high‑res asset...</p>
+                <p className="text-xs text-gray-500 font-mono">Initializing editor...</p>
               </div>
             )}
             {originalImageData && (
@@ -908,7 +966,7 @@
         </div>
 
         {/* Mobile Bottom Drawer */}
-        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-x-0 border-b-0 rounded-t-2xl transition-transform duration-300 transform safe-bottom ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%-48px)]'}`}>
+        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-x-0 border-b-0 rounded-t-2xl transition-transform duration-300 transform ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%-48px)]'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div 
             onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)} 
             className="h-12 flex items-center justify-between px-4 border-b border-white/5 cursor-pointer bg-white/[0.02]"
@@ -969,7 +1027,7 @@
               </div>
             )}
           </div>
-          <nav className="h-14 border-t border-white/5 flex items-center justify-around px-2 bg-[#090a0d] safe-bottom shrink-0">
+          <nav className="h-14 border-t border-white/5 flex items-center justify-around px-2 bg-[#090a0d] shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <button 
               onClick={() => { setMobileTab('basic'); setIsMobilePanelOpen(true); }} 
               className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'basic' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
