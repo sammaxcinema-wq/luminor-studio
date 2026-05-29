@@ -24,7 +24,6 @@
       letter-spacing: -0.01em;
     }
 
-    /* custom ultra-modern scroll */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: rgba(15, 20, 30, 0.6); border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: #FF5C00; border-radius: 10px; }
@@ -104,7 +103,7 @@
 <script type="text/babel">
   const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-  // ---------- ADVANCED COLOR ENGINE ----------
+  // ========== ADVANCED COLOR ENGINE ==========
   function rgbToHsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -182,7 +181,7 @@
     }
   }
 
-  // ----- INITIAL MATRICES -----
+  // ========== INITIAL MATRICES ==========
   const INITIAL_CORE = { exposure: 0.15, contrast: 0.2, warmth: 0.05 };
   const INITIAL_HSL = {
     red: { hue: 18, saturation: -12, luminance: 18, hex: '#FF453A' },
@@ -206,7 +205,7 @@
     { id: 'mixer_shortcut', label: 'HSL Focus', iconPath: "M12 3v18M9 6l3-3 3 3M9 18l3 3 3-3", hotkey: 'M' }
   ];
 
-  // AUTH LAYER (minimal but elegant)
+  // ========== AUTH LAYER ==========
   const AuthGate = ({ onAuth }) => {
     const [email, setEmail] = useState('creator@luminor.space');
     const handleLogin = (e) => { e.preventDefault(); onAuth({ email }); };
@@ -230,12 +229,12 @@
     );
   };
 
-  // ----- ICON COMPONENT (SVG minimal) -----
+  // ========== ICON COMPONENT ==========
   const StudioIcon = ({ d, size = 20 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
   );
 
-  // MAIN STUDIO
+  // ========== MAIN STUDIO WORKSTATION ==========
   const StudioWorkstation = ({ session, onLogout }) => {
     const [activeTab, setActiveTab] = useState('design');
     const [activeTool, setActiveTool] = useState('select');
@@ -258,7 +257,7 @@
     const processedBuffer = useRef(null);
     const renderLock = useRef(false);
     
-    // build procedural abstract matrix background (4K ready)
+    // Build procedural abstract background (static)
     useEffect(() => {
       const w = 480, h = 680;
       const canvasOff = document.createElement('canvas');
@@ -312,7 +311,12 @@
       else setLayers(prev => [...prev, { id, type: 'rect', x: 130, y: 360, w: 150, h: 48, radius: 8, color: 'rgba(255,92,0,0.2)', stroke: '#FF5C00' }]);
       setSelectedId(id); setActiveTool('select');
     };
-    const deleteLayer = () => { if (layers.length > 1) setLayers(prev => prev.filter(l => l.id !== selectedId)); setSelectedId(layers[0]?.id || layers[1]?.id); };
+    const deleteLayer = () => { 
+      if (layers.length > 1) {
+        setLayers(prev => prev.filter(l => l.id !== selectedId)); 
+        setSelectedId(layers[0]?.id || layers[1]?.id); 
+      }
+    };
     const duplicateLayer = () => {
       const original = selectedLayer;
       if (!original) return;
@@ -333,7 +337,7 @@
     
     return (
       <div className="h-screen w-full bg-[#05070A] flex flex-col overflow-hidden">
-        {/* Top Bar - futuristic */}
+        {/* Top Bar */}
         <header className="h-14 flex items-center justify-between px-5 border-b border-white/5 bg-[#0B0E14]/80 backdrop-blur-md shrink-0 z-30">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
@@ -350,7 +354,7 @@
         </header>
 
         <div className="flex-1 flex overflow-hidden relative">
-          {/* LEFT TOOLBAR (modern svg) */}
+          {/* LEFT TOOLBAR */}
           <aside className="w-16 bg-[#0A0D14]/90 backdrop-blur-sm border-r border-white/5 flex flex-col items-center py-4 gap-3 z-20">
             {TOOL_ITEMS.map(tool => {
               const isActive = activeTool === tool.id || (tool.id === 'mixer_shortcut' && activeTab === 'mixer');
@@ -363,11 +367,11 @@
             })}
           </aside>
 
-          {/* CENTRAL CANVAS ZONE */}
+          {/* CENTRAL CANVAS */}
           <main className="flex-1 canvas-container flex items-center justify-center p-5 relative">
             <div className="relative shadow-2xl rounded-2xl overflow-hidden border border-white/15 transition-all duration-200" style={{ width: '480px', height: '680px', transform: `scale(${zoom/100})`, boxShadow: '0 25px 45px -12px black' }}>
               <canvas ref={viewportCanvas} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-              {/* Interactive Layers */}
+              {/* Interactive Layers - fixed missing key */}
               <div className="absolute inset-0 z-10 pointer-events-none">
                 {layers.map(layer => {
                   const isSelected = selectedId === layer.id;
@@ -385,7 +389,7 @@
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2 glass-premium rounded-full px-4 py-1.5 flex gap-3 text-[11px] font-mono"><span className="text-[#FF5C00]">◉ MATRIX ACTIVE</span> <span className="text-gray-400">| HSL NEURAL | 8‑BIT DEPTH</span></div>
           </main>
 
-          {/* RIGHT INSPECTOR — PREMIUM */}
+          {/* RIGHT INSPECTOR */}
           <aside className="w-80 bg-[#0B0E14]/90 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 overflow-y-auto">
             <div className="grid grid-cols-3 p-2 gap-2 border-b border-white/5 bg-black/20 sticky top-0 z-10">
               {SIDEBAR_TABS.map(tab => (
@@ -434,6 +438,7 @@
     );
   };
 
+  // ========== APP ROOT ==========
   const App = () => {
     const [session, setSession] = useState(() => {
       const saved = localStorage.getItem('luminor_session');
@@ -441,6 +446,7 @@
     });
     return session ? <StudioWorkstation session={session} onLogout={() => { setSession(null); localStorage.removeItem('luminor_session'); }} /> : <AuthGate onAuth={(data) => { setSession(data); localStorage.setItem('luminor_session', JSON.stringify(data)); }} />;
   };
+  
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
