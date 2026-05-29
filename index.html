@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Luminor Studio — Advanced Photo Suite</title>
-  <!-- Tailwind CSS + Google Fonts -->
+  <title>Luminor Studio Pro — Professional Photo Editor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-  <!-- React 18 & ReactDOM -->
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    /* --- Design System Tokens & Base Setup --- */
     :root {
       --brand-primary: #2F66F6;
       --brand-primary-glow: rgba(47, 102, 246, 0.15);
@@ -20,60 +17,55 @@
       --border-subtle: rgba(255, 255, 255, 0.04);
       --border-elevated: rgba(255, 255, 255, 0.08);
     }
-
+    
     * { 
       touch-action: pan-y pinch-zoom; 
-      -webkit-tap-highlight-color: transparent; 
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
     }
     
     body { 
-      font-family: 'Inter', system-ui, sans-serif; 
-      background-color: #040507; 
-      overflow: hidden; 
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #040507;
+      overflow: hidden;
       letter-spacing: -0.01em;
+      margin: 0;
+      padding: 0;
     }
 
-    /* --- Custom Scrollbars --- */
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }
 
-    /* --- Advanced Glassmorphism Engine --- */
     .glass-panel { 
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      background: var(--bg-surface); 
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      box-shadow: cubic-bezier(0.16, 1, 0.3, 1) 0px 8px 32px rgba(0, 0, 0, 0.4);
-    }
-    
-    .glass-panel-elevated {
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      background: rgba(20, 22, 28, 0.8);
-      border: 1px solid var(--border-elevated);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    /* --- Premium Inputs & Interactive Containers --- */
     .glass-input { 
-      background: rgba(255, 255, 255, 0.02); 
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); 
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      color: white;
     }
+    
     .glass-input:hover {
       background: rgba(255, 255, 255, 0.04);
       border-color: rgba(255, 255, 255, 0.12);
     }
-    .glass-input:focus { 
-      border-color: var(--brand-primary); 
-      background: rgba(47, 102, 246, 0.03); 
+    
+    .glass-input:focus {
+      border-color: var(--brand-primary);
+      background: rgba(47, 102, 246, 0.03);
       box-shadow: 0 0 0 3px var(--brand-primary-glow);
-      outline: none; 
+      outline: none;
     }
 
-    /* --- Advanced Button Utilities (Hardware Accelerated) --- */
     .btn-action {
       position: relative;
       display: inline-flex;
@@ -83,77 +75,54 @@
       transform: translateZ(0);
       will-change: transform, opacity;
     }
+
     .btn-action:active {
       transform: scale(0.97) translateY(0.5px);
     }
 
-    /* --- Segmented Controls / Pill Tabs --- */
-    .tab-container {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--border-subtle);
-      padding: 3px;
-      border-radius: 9px;
-    }
-    
-    .tab-pill {
-      position: relative;
-      transition: color 0.2s ease;
-    }
-    .tab-pill::after {
-      content: '';
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%) scaleX(0);
-      width: 16px;
-      height: 2px;
-      background: var(--brand-primary);
-      border-radius: 99px;
-      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .tab-pill.active::after {
-      transform: translateX(-50%) scaleX(1);
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(6px); } 
+      to { opacity: 1; transform: translateY(0); } 
     }
 
-    /* --- Safe Screen Layouts --- */
-    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fadeIn { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+    .animate-fadeIn { 
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
   </style>
 </head>
 <body class="bg-black text-white antialiased overflow-hidden select-none">
 
 <div id="root"></div>
 
-<script type="text/babel" data-type="module">
+<script type="text/babel">
   const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-  // ---------- VALIDATION UTILITIES ----------
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
+  // ========== VALIDATION ==========
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (password) => password && password.length >= 6;
 
-  const validatePassword = (password) => {
-    return password && password.length >= 6;
-  };
-
-  // ---------- HIGH-PERFORMANCE MATH & IMAGE UTILITIES ----------
-  function catmullRomToBezierPoints(p0, p1, p2, p3) {
-    return [
-      p1,
-      { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
-      { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 },
-      p2
-    ];
+  // ========== IMAGE PROCESSING ==========
+  function catmullRom(p0, p1, p2, p3, t) {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * (
+      2 * p1 +
+      (-p0 + p2) * t +
+      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+      (-p0 + 3 * p1 - 3 * p2 + p3) * t3
+    );
   }
 
   function interpolateCurve(points, numPoints = 256) {
-    if (points.length < 2) {
-      const arr = new Array(numPoints);
-      for (let i = 0; i < numPoints; i++) arr[i] = i / (numPoints - 1);
-      return arr;
-    }
+    if (points.length < 2) return new Uint8ClampedArray(numPoints).fill(0);
+    
     const sorted = [...points].sort((a, b) => a.x - b.x);
     let extended = [...sorted];
     if (extended[0].x > 0) extended.unshift({ x: 0, y: extended[0].y });
@@ -164,131 +133,106 @@
       const x = i / (numPoints - 1);
       let idx = 0;
       while (idx < extended.length - 2 && extended[idx + 1].x < x) idx++;
-      const p0 = extended[Math.max(0, idx - 1)], p1 = extended[idx], p2 = extended[idx + 1], p3 = extended[Math.min(extended.length - 1, idx + 2)];
+      
+      const p0 = extended[Math.max(0, idx - 1)];
+      const p1 = extended[idx];
+      const p2 = extended[idx + 1];
+      const p3 = extended[Math.min(extended.length - 1, idx + 2)];
+      
       const t = (x - p1.x) / (p2.x - p1.x);
-      const [a, b, c, d] = catmullRomToBezierPoints(p0, p1, p2, p3);
-      const t2 = t * t, t3 = t2 * t;
-      const yOut = Math.pow(1 - t, 3) * a.y + 3 * Math.pow(1 - t, 2) * t * b.y + 3 * (1 - t) * t2 * c.y + t3 * d.y;
-      result[i] = Math.min(255, Math.max(0, Math.floor(yOut * 255)));
+      const value = catmullRom(p0.y, p1.y, p2.y, p3.y, t);
+      result[i] = Math.min(255, Math.max(0, Math.floor(value * 255)));
     }
     return result;
   }
 
-  const hueRanges = {
-    red: { min: 0, max: 15 }, orange: { min: 16, max: 35 }, yellow: { min: 36, max: 55 },
-    green: { min: 56, max: 160 }, aqua: { min: 161, max: 195 }, blue: { min: 196, max: 260 },
-    purple: { min: 261, max: 320 }, magenta: { min: 321, max: 360 }
-  };
-
-  function processImageData(srcData, dstData, state, curveLUT) {
-    const { exposure, contrast, highlights, shadows, hsl } = state;
-    const activeModifiers = [];
+  function processImage(srcData, dstData, adjustments) {
+    const { exposure, contrast, saturation, highlights, shadows, warmth, tint, vibrancy } = adjustments;
     
-    for (const [channel, range] of Object.entries(hueRanges)) {
-      const adj = hsl[channel];
-      if (adj && (adj.hue !== 0 || adj.sat !== 0 || adj.lum !== 0)) {
-        activeModifiers.push({ range, adj });
-      }
-    }
-    
-    const dynamicHsl = activeModifiers.length > 0;
     const expFactor = Math.pow(2, exposure);
     const cont = contrast + 1;
-    const hl = highlights * 0.5, sh = shadows * 0.5;
+    const hl = highlights * 0.5;
+    const sh = shadows * 0.5;
 
     for (let i = 0; i < srcData.length; i += 4) {
-      let rf = (srcData[i] / 255) * expFactor;
-      let gf = (srcData[i + 1] / 255) * expFactor;
-      let bf = (srcData[i + 2] / 255) * expFactor;
+      let r = srcData[i] / 255;
+      let g = srcData[i + 1] / 255;
+      let b = srcData[i + 2] / 255;
+      const a = srcData[i + 3] / 255;
 
-      rf = ((rf - 0.5) * cont) + 0.5;
-      gf = ((gf - 0.5) * cont) + 0.5;
-      bf = ((bf - 0.5) * cont) + 0.5;
-      
-      rf = Math.pow(Math.max(0, rf), 1 + hl) * (1 - sh) + sh;
-      gf = Math.pow(Math.max(0, gf), 1 + hl) * (1 - sh) + sh;
-      bf = Math.pow(Math.max(0, bf), 1 + hl) * (1 - sh) + sh;
+      // Exposure & contrast
+      r *= expFactor;
+      g *= expFactor;
+      b *= expFactor;
 
-      let rComp = curveLUT.rgb[Math.min(255, Math.max(0, Math.floor(rf * 255)))];
-      let gComp = curveLUT.rgb[Math.min(255, Math.max(0, Math.floor(gf * 255)))];
-      let bComp = curveLUT.rgb[Math.min(255, Math.max(0, Math.floor(bf * 255)))];
+      r = ((r - 0.5) * cont) + 0.5;
+      g = ((g - 0.5) * cont) + 0.5;
+      b = ((b - 0.5) * cont) + 0.5;
 
-      let nr = curveLUT.red[rComp];
-      let ng = curveLUT.green[gComp];
-      let nb = curveLUT.blue[bComp];
+      // Highlights & shadows
+      r = Math.pow(Math.max(0, r), 1 + hl) * (1 - sh) + sh;
+      g = Math.pow(Math.max(0, g), 1 + hl) * (1 - sh) + sh;
+      b = Math.pow(Math.max(0, b), 1 + hl) * (1 - sh) + sh;
 
-      if (dynamicHsl) {
-        let rNorm = nr / 255, gNorm = ng / 255, bNorm = nb / 255;
-        let max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
-        let h = 0, s = 0, l = (max + min) / 2;
+      // Warmth (shift RGB)
+      r += warmth * 0.05;
+      b -= warmth * 0.05;
 
-        if (max !== min) {
-          let d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          if (max === rNorm) h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0);
-          else if (max === gNorm) h = (bNorm - rNorm) / d + 2;
-          else h = (rNorm - gNorm) / d + 4;
-          h *= 60;
-        }
-        s *= 100; l *= 100;
+      // Tint (shift G)
+      g += tint * 0.05;
 
-        let modified = false;
-        for (let j = 0; j < activeModifiers.length; j++) {
-          const { range, adj } = activeModifiers[j];
-          if (range.min <= range.max ? (h >= range.min && h <= range.max) : (h >= range.min || h <= range.max)) {
-            h = (h + adj.hue + 360) % 360;
-            s = Math.min(100, Math.max(0, s + adj.sat));
-            l = Math.min(100, Math.max(0, l + adj.lum));
-            modified = true;
-          }
-        }
+      // Saturation
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = gray + (r - gray) * (1 + saturation);
+      g = gray + (g - gray) * (1 + saturation);
+      b = gray + (b - gray) * (1 + saturation);
 
-        if (modified) {
-          s /= 100; l /= 100;
-          let c = (1 - Math.abs(2 * l - 1)) * s;
-          let hp = h / 60;
-          let x = c * (1 - Math.abs((hp % 2) - 1));
-          let r1 = 0, g1 = 0, b1 = 0;
-          if (hp <= 1) [r1, g1, b1] = [c, x, 0];
-          else if (hp <= 2) [r1, g1, b1] = [x, c, 0];
-          else if (hp <= 3) [r1, g1, b1] = [0, c, x];
-          else if (hp <= 4) [r1, g1, b1] = [0, x, c];
-          else if (hp <= 5) [r1, g1, b1] = [x, 0, c];
-          else [r1, g1, b1] = [c, 0, x];
-          let m = l - c / 2;
-          nr = Math.round((r1 + m) * 255);
-          ng = Math.round((g1 + m) * 255);
-          nb = Math.round((b1 + m) * 255);
-        }
+      // Vibrancy (boost saturation for less saturated colors)
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const chroma = maxC - minC;
+      if (chroma > 0) {
+        const boost = vibrancy * (1 - chroma);
+        r += (r - gray) * boost * 0.5;
+        g += (g - gray) * boost * 0.5;
+        b += (b - gray) * boost * 0.5;
       }
 
-      dstData[i] = nr;
-      dstData[i + 1] = ng;
-      dstData[i + 2] = nb;
+      // Clamp
+      dstData[i] = Math.min(255, Math.max(0, Math.round(r * 255)));
+      dstData[i + 1] = Math.min(255, Math.max(0, Math.round(g * 255)));
+      dstData[i + 2] = Math.min(255, Math.max(0, Math.round(b * 255)));
       dstData[i + 3] = srcData[i + 3];
     }
   }
 
-  // ---------- AUTH LAYER ----------
+  // ========== FILTER PRESETS ==========
+  const FILTERS = {
+    'None': { exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 },
+    'Warm': { exposure: 0.2, contrast: 0.1, saturation: 0.15, highlights: -0.1, shadows: 0.1, warmth: 0.4, tint: -0.1, vibrancy: 0 },
+    'Cool': { exposure: 0.1, contrast: 0.15, saturation: 0.1, highlights: 0, shadows: -0.1, warmth: -0.5, tint: 0.2, vibrancy: 0 },
+    'Vintage': { exposure: -0.15, contrast: 0.2, saturation: -0.2, highlights: 0.15, shadows: 0.3, warmth: 0.3, tint: 0.1, vibrancy: -0.1 },
+    'B&W': { exposure: 0, contrast: 0.3, saturation: -1, highlights: 0.1, shadows: 0.1, warmth: 0, tint: 0, vibrancy: 0 },
+    'Vivid': { exposure: 0.1, contrast: 0.25, saturation: 0.4, highlights: -0.2, shadows: 0.15, warmth: 0.1, tint: 0.1, vibrancy: 0.3 },
+    'Fade': { exposure: 0.3, contrast: -0.15, saturation: -0.3, highlights: -0.2, shadows: 0.2, warmth: 0.15, tint: 0, vibrancy: -0.2 },
+    'Deep': { exposure: -0.2, contrast: 0.4, saturation: 0.2, highlights: 0.1, shadows: -0.3, warmth: 0.2, tint: 0, vibrancy: 0.2 }
+  };
+
+  // ========== AUTH COMPONENT ==========
   const AuthGuard = ({ onAuthSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const getErrorMessage = () => {
-      if (!email) return 'Email is required.';
-      if (!validateEmail(email)) return 'Please enter a valid email address.';
-      if (!password) return 'Password is required.';
-      if (!validatePassword(password)) return 'Password must be at least 6 characters.';
-      return '';
-    };
-
     const handleSubmit = (e) => {
       e.preventDefault();
-      const err = getErrorMessage();
-      if (err) {
-        setError(err);
+      if (!email || !validateEmail(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+      if (!password || !validatePassword(password)) {
+        setError('Password must be at least 6 characters');
         return;
       }
       
@@ -296,496 +240,252 @@
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        onAuthSuccess({ email, token: "luminor_jwt_" + Date.now() });
-      }, 1000);
+        onAuthSuccess({ email, token: 'lum_' + Date.now() });
+      }, 800);
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050507] overflow-y-auto">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2F66F6]/10 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="glass-panel-elevated w-full max-w-md rounded-2xl p-6 md:p-8 shadow-2xl relative z-10 animate-fadeIn">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040507]">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="glass-panel w-full max-w-md rounded-2xl p-6 md:p-8 relative z-10 animate-fadeIn">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-[#2F66F6] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(47,102,246,0.4)] mb-3">
-              <span className="font-bold text-xl tracking-tight">L</span>
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(47,102,246,0.4)] mb-3">
+              <span className="font-bold text-xl">✓</span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Luminor Studio Pro</h1>
-            <p className="text-xs text-gray-400 mt-1">Enterprise Creative Suite</p>
+            <h1 className="text-2xl font-bold tracking-tight">Luminor Studio</h1>
+            <p className="text-xs text-gray-400 mt-2">Professional Photo Editor</p>
           </div>
-          {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 animate-fadeIn">
-              {error}
-            </div>
-          )}
+
+          {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 animate-fadeIn">{error}</div>}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5">Email</label>
+              <label className="text-xs font-semibold text-gray-400 mb-2 block">Email</label>
               <input 
-                type="email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value.trim())} 
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 disabled={loading}
-                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none disabled:opacity-50" 
-                placeholder="creator@luminor.io"
+                className="glass-input w-full px-4 py-3 text-sm"
+                placeholder="your@email.com"
                 autoComplete="email"
               />
             </div>
             <div>
-              <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5">Password</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
+              <label className="text-xs font-semibold text-gray-400 mb-2 block">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none disabled:opacity-50" 
+                className="glass-input w-full px-4 py-3 text-sm"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
-              className="btn-action w-full bg-[#2F66F6] hover:bg-[#2554d6] disabled:opacity-50 text-white font-semibold text-sm py-3 rounded-xl transition shadow-[0_12px_32px_rgba(47,102,246,0.25)] gap-2"
+              className="btn-action w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition shadow-[0_12px_32px_rgba(47,102,246,0.25)]"
             >
               {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Authenticating...</span>
-                </>
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /><span>Signing in...</span></>
               ) : (
-                'Access Workspace'
+                'Sign In'
               )}
             </button>
           </form>
-          <p className="text-[10px] text-gray-500 mt-6 text-center">Demo credentials: any valid email & 6+ character password</p>
+
+          <p className="text-[10px] text-gray-500 mt-6 text-center">Demo: any email + 6+ char password</p>
         </div>
       </div>
     );
   };
 
-  // ---------- UI COMPONENTS ----------
-  const ParamSlider = ({ label, value, min, max, step, onChange, onCommit, unit = '' }) => {
+  // ========== SLIDER COMPONENT ==========
+  const Slider = ({ label, value, min, max, step, onChange, onCommit, unit = '' }) => {
     const id = React.useId();
     return (
-      <div className="mb-5">
-        <div className="flex justify-between text-xs text-gray-400 mb-1">
-          <label htmlFor={id} className="tracking-wide">{label}</label>
-          <span className="font-mono text-white/90">{value.toFixed(2)}{unit}</span>
+      <div className="mb-4">
+        <div className="flex justify-between text-xs text-gray-400 mb-2">
+          <label htmlFor={id} className="font-medium">{label}</label>
+          <span className="font-mono text-white/80">{value.toFixed(2)}{unit}</span>
         </div>
-        <div className="relative py-2 -my-2" style={{ minHeight: '44px' }}>
-          <input 
-            id={id} 
-            type="range" 
-            min={min} 
-            max={max} 
-            step={step} 
-            value={value}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            onMouseUp={onCommit} 
-            onTouchEnd={onCommit}
-            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#2F66F6]" 
-          />
-        </div>
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          onMouseUp={onCommit}
+          onTouchEnd={onCommit}
+          className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-600"
+        />
       </div>
     );
   };
 
-  const HSLMatrix = ({ hslState, onHSLChange, onCommit }) => {
-    const channels = ['red','orange','yellow','green','aqua','blue','purple','magenta'];
-    const [active, setActive] = useState('red');
-    const current = hslState[active] || { hue: 0, sat: 0, lum: 0 };
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-1.5 pb-1">
-          {channels.map(ch => (
-            <button 
-              key={ch} 
-              onClick={() => setActive(ch)}
-              className={`btn-action px-3 py-1.5 text-xs rounded-full border transition-all shrink-0 ${active === ch ? 'bg-[#2F66F6] text-white border-[#2F66F6] shadow-[0_4px_12px_rgba(47,102,246,0.3)]' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/20'}`}
-            >
-              {ch.charAt(0).toUpperCase() + ch.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-          <ParamSlider 
-            label="Hue" 
-            value={current.hue} 
-            min={-180} 
-            max={180} 
-            step={1} 
-            onChange={(v) => onHSLChange(active, { hue: v })} 
-            onCommit={onCommit} 
-            unit="°" 
-          />
-          <ParamSlider 
-            label="Saturation" 
-            value={current.sat} 
-            min={-100} 
-            max={100} 
-            step={1} 
-            onChange={(v) => onHSLChange(active, { sat: v })} 
-            onCommit={onCommit} 
-            unit="%" 
-          />
-          <ParamSlider 
-            label="Luminance" 
-            value={current.lum} 
-            min={-100} 
-            max={100} 
-            step={1} 
-            onChange={(v) => onHSLChange(active, { lum: v })} 
-            onCommit={onCommit} 
-            unit="%" 
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const ToneCurveEditor = ({ points, channelId, onChange, onCommit }) => {
-    const size = 240;
-    const svgRef = useRef(null);
-    const [dragIdx, setDragIdx] = useState(null);
-    const toSvg = (p) => ({ x: p.x * size, y: (1 - p.y) * size });
-    const toNorm = (x, y) => ({ x: Math.min(1, Math.max(0, x / size)), y: Math.min(1, Math.max(0, 1 - y / size)) });
-
-    const getCoord = (e) => {
-      if (!svgRef.current) return null;
-      const rect = svgRef.current.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const scaleX = size / rect.width, scaleY = size / rect.height;
-      return toNorm(
-        Math.min(size, Math.max(0, (clientX - rect.left) * scaleX)),
-        Math.min(size, Math.max(0, (clientY - rect.top) * scaleY))
-      );
-    };
-
-    const handleClick = (e) => {
-      if (e.touches || !svgRef.current) return;
-      const norm = getCoord(e);
-      if (!norm) return;
-      const newPoints = [...points, norm].sort((a, b) => a.x - b.x);
-      onChange(newPoints);
-      if (onCommit) onCommit(newPoints);
-    };
-
-    const onPointerMove = useCallback((e) => {
-      if (dragIdx === null || !svgRef.current) return;
-      const norm = getCoord(e);
-      if (!norm) return;
-      const updated = [...points];
-      updated[dragIdx] = norm;
-      onChange(updated.sort((a, b) => a.x - b.x));
-    }, [dragIdx, points, onChange]);
-
-    const onPointerUp = useCallback(() => {
-      if (dragIdx !== null && onCommit) onCommit(points);
-      setDragIdx(null);
-    }, [dragIdx, points, onCommit]);
-
-    useEffect(() => {
-      if (dragIdx !== null) {
-        window.addEventListener('mousemove', onPointerMove);
-        window.addEventListener('mouseup', onPointerUp);
-        window.addEventListener('touchmove', onPointerMove, { passive: false });
-        window.addEventListener('touchend', onPointerUp);
-        return () => {
-          window.removeEventListener('mousemove', onPointerMove);
-          window.removeEventListener('mouseup', onPointerUp);
-          window.removeEventListener('touchmove', onPointerMove);
-          window.removeEventListener('touchend', onPointerUp);
-        };
-      }
-    }, [dragIdx, onPointerMove, onPointerUp]);
-
-    const curvePath = useMemo(() => {
-      if (points.length < 2) return '';
-      const sorted = [...points].sort((a, b) => a.x - b.x);
-      const extended = [...sorted];
-      if (extended[0].x > 0) extended.unshift({ x: 0, y: extended[0].y });
-      if (extended[extended.length - 1].x < 1) extended.push({ x: 1, y: extended[extended.length - 1].y });
-      let d = `M ${toSvg(extended[0]).x} ${toSvg(extended[0]).y}`;
-      for (let i = 1; i < extended.length - 2; i++) {
-        const p0 = extended[i - 1], p1 = extended[i], p2 = extended[i + 1], p3 = extended[i + 2];
-        const [a, b, c, dP] = catmullRomToBezierPoints(p0, p1, p2, p3);
-        const cp1 = toSvg(b), cp2 = toSvg(c), end = toSvg(dP);
-        d += ` C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
-      }
-      d += ` L ${toSvg(extended[extended.length - 1]).x} ${toSvg(extended[extended.length - 1]).y}`;
-      return d;
-    }, [points]);
-
-    return (
-      <div className="flex flex-col items-center bg-black/40 p-3 rounded-xl border border-white/5">
-        <svg 
-          ref={svgRef} 
-          width={size} 
-          height={size} 
-          viewBox={`0 0 ${size} ${size}`} 
-          className="bg-black/80 rounded-lg cursor-crosshair select-none" 
-          onClick={handleClick}
-        >
-          <defs>
-            <pattern id={`grid-${channelId}`} width={size / 4} height={size / 4} patternUnits="userSpaceOnUse">
-              <path d={`M ${size / 4} 0 L 0 0 0 ${size / 4}`} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
-            </pattern>
-          </defs>
-          <rect width={size} height={size} fill={`url(#grid-${channelId})`} />
-          <path d={curvePath} stroke="#2F66F6" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          {points.map((p, idx) => {
-            const { x, y } = toSvg(p);
-            return (
-              <circle 
-                key={idx} 
-                cx={x} 
-                cy={y} 
-                r="7" 
-                fill="#2F66F6" 
-                stroke="white" 
-                strokeWidth="2"
-                className="cursor-grab active:cursor-grabbing"
-                onMouseDown={(e) => { e.stopPropagation(); setDragIdx(idx); }}
-                onTouchStart={(e) => { e.stopPropagation(); setDragIdx(idx); }}
-                onDoubleClick={(e) => { 
-                  e.stopPropagation(); 
-                  if (points.length > 2) { 
-                    const n = [...points]; 
-                    n.splice(idx, 1); 
-                    onChange(n); 
-                    if (onCommit) onCommit(n); 
-                  } 
-                }} 
-              />
-            );
-          })}
-        </svg>
-        <p className="text-[10px] text-gray-500 mt-2 text-center">Click → add point • Drag → move • Double-click → remove</p>
-      </div>
-    );
-  };
-
-  // ---------- MAIN WORKSPACE DASHBOARD ----------
-  const LuminorStudio = ({ user, onLogout }) => {
-    const getDefaultState = () => ({
-      exposure: 0, contrast: 0, highlights: 0, shadows: 0,
-      hsl: {
-        red: { hue: 0, sat: 0, lum: 0 }, orange: { hue: 0, sat: 0, lum: 0 }, yellow: { hue: 0, sat: 0, lum: 0 }, green: { hue: 0, sat: 0, lum: 0 },
-        aqua: { hue: 0, sat: 0, lum: 0 }, blue: { hue: 0, sat: 0, lum: 0 }, purple: { hue: 0, sat: 0, lum: 0 }, magenta: { hue: 0, sat: 0, lum: 0 }
-      },
-      toneCurve: {
-        activeChannel: 'rgb',
-        channels: {
-          rgb: [{ x: 0, y: 0 }, { x: 0.25, y: 0.25 }, { x: 0.5, y: 0.5 }, { x: 0.75, y: 0.75 }, { x: 1, y: 1 }],
-          red: [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }],
-          green: [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }],
-          blue: [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]
-        }
-      }
+  // ========== MAIN EDITOR ==========
+  const PhotoEditor = ({ user, onLogout }) => {
+    const [image, setImage] = useState(null);
+    const [adjustments, setAdjustments] = useState({
+      exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0,
+      warmth: 0, tint: 0, vibrancy: 0
     });
-
-    const [state, setState] = useState(getDefaultState());
-    const [history, setHistory] = useState([getDefaultState()]);
+    const [history, setHistory] = useState([adjustments]);
     const [historyIdx, setHistoryIdx] = useState(0);
-    const [originalImageData, setOriginalImageData] = useState(null);
-    const [imageError, setImageError] = useState(null);
     const [splitPos, setSplitPos] = useState(0.5);
-    const [mobileTab, setMobileTab] = useState('basic');
-    const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
-    
+    const [selectedFilter, setSelectedFilter] = useState('None');
+    const [mobileTab, setMobileTab] = useState('adjust');
+    const [showMobilePanel, setShowMobilePanel] = useState(false);
+
     const canvasRef = useRef(null);
-    const leftCanvasRef = useRef(null);
-    const rightCanvasRef = useRef(null);
-    const processedImageDataRef = useRef(null);
-    const processTimer = useRef(null);
+    const originalRef = useRef(null);
+    const processedRef = useRef(null);
 
+    // Generate test image
     useEffect(() => {
-      leftCanvasRef.current = document.createElement('canvas');
-      rightCanvasRef.current = document.createElement('canvas');
+      const canvas = document.createElement('canvas');
+      canvas.width = 1000;
+      canvas.height = 667;
+      const ctx = canvas.getContext('2d');
+
+      // Base gradient
+      const grad = ctx.createLinearGradient(0, 0, 1000, 667);
+      grad.addColorStop(0, '#1a472a');
+      grad.addColorStop(0.5, '#2d5a4a');
+      grad.addColorStop(1, '#1f3d3a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1000, 667);
+
+      // Light overlay
+      const light = ctx.createRadialGradient(700, 0, 0, 700, 0, 1000);
+      light.addColorStop(0, 'rgba(255,200,100,0.2)');
+      light.addColorStop(1, 'rgba(255,200,100,0)');
+      ctx.fillStyle = light;
+      ctx.fillRect(0, 0, 1000, 667);
+
+      // Shapes
+      ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
+      ctx.beginPath();
+      ctx.ellipse(300, 267, 350, 250, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(200, 100, 255, 0.08)';
+      ctx.beginPath();
+      ctx.ellipse(750, 400, 300, 300, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Accent lines
+      ctx.strokeStyle = 'rgba(100, 220, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(200, 200, 80, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 150, 100, 0.25)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(500, 0);
+      ctx.lineTo(500, 667);
+      ctx.stroke();
+
+      const imgData = ctx.getImageData(0, 0, 1000, 667);
+      setImage(imgData);
+      originalRef.current = imgData;
+      processedRef.current = new ImageData(
+        new Uint8ClampedArray(imgData.data.length),
+        imgData.width,
+        imgData.height
+      );
     }, []);
 
+    // Draw split view
     useEffect(() => {
-      const generateTestImage = () => {
-        try {
-          const width = 1000;
-          const height = 667;
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('Failed to get 2D context');
+      if (!image || !canvasRef.current) return;
 
-          // Base gradient background
-          const grad = ctx.createLinearGradient(0, 0, width, height);
-          grad.addColorStop(0, '#1a472a');
-          grad.addColorStop(0.5, '#2d5a4a');
-          grad.addColorStop(1, '#1f3d3a');
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, width, height);
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-          // Add atmospheric light
-          const lightGrad = ctx.createRadialGradient(width * 0.7, 0, 0, width * 0.7, 0, width);
-          lightGrad.addColorStop(0, 'rgba(255,200,100,0.15)');
-          lightGrad.addColorStop(1, 'rgba(255,200,100,0)');
-          ctx.fillStyle = lightGrad;
-          ctx.fillRect(0, 0, width, height);
+      canvas.width = image.width;
+      canvas.height = image.height;
 
-          // Layered geometric shapes with depth
-          ctx.fillStyle = 'rgba(100, 200, 255, 0.08)';
-          ctx.beginPath();
-          ctx.ellipse(width * 0.3, height * 0.4, width * 0.35, height * 0.25, -0.3, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = 'rgba(200, 100, 255, 0.06)';
-          ctx.beginPath();
-          ctx.ellipse(width * 0.75, height * 0.6, width * 0.3, height * 0.3, 0.4, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Texture overlay
-          const imgData = ctx.getImageData(0, 0, width, height);
-          const data = imgData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const noise = Math.sin(i * 0.0001) * 10;
-            data[i] += noise;
-            data[i + 1] += noise * 0.5;
-            data[i + 2] += noise * 0.3;
-          }
-          ctx.putImageData(imgData, 0, 0);
-
-          // Bright accent details
-          ctx.strokeStyle = 'rgba(100, 220, 255, 0.3)';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(width * 0.2, height * 0.3, 80, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.strokeStyle = 'rgba(255, 150, 100, 0.25)';
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(width * 0.5, 0);
-          ctx.lineTo(width * 0.5, height);
-          ctx.stroke();
-
-          // Get final image data
-          const originalData = ctx.getImageData(0, 0, width, height);
-          setOriginalImageData(originalData);
-          processedImageDataRef.current = new ImageData(
-            new Uint8ClampedArray(originalData.data.length),
-            originalData.width,
-            originalData.height
-          );
-          setImageError(null);
-        } catch (err) {
-          setImageError('Failed to generate test image: ' + err.message);
-        }
-      };
-
-      // Generate image immediately without network dependency
-      generateTestImage();
-    }, []);
-
-    const drawSplitView = useCallback(() => {
       try {
-        if (!canvasRef.current || !originalImageData || !processedImageDataRef.current) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        
-        const w = originalImageData.width, h = originalImageData.height;
-        
-        if (canvas.width !== w) {
-          canvas.width = w; 
-          canvas.height = h;
-          leftCanvasRef.current.width = w; 
-          leftCanvasRef.current.height = h;
-          rightCanvasRef.current.width = w; 
-          rightCanvasRef.current.height = h;
-          const leftCtx = leftCanvasRef.current.getContext('2d');
-          if (leftCtx) leftCtx.putImageData(originalImageData, 0, 0);
-        }
+        processImage(originalRef.current.data, processedRef.current.data, adjustments);
 
-        const rightCtx = rightCanvasRef.current.getContext('2d');
-        if (rightCtx) rightCtx.putImageData(processedImageDataRef.current, 0, 0);
-
-        const splitX = w * splitPos;
-        ctx.drawImage(leftCanvasRef.current, 0, 0, splitX, h, 0, 0, splitX, h);
-        ctx.drawImage(rightCanvasRef.current, splitX, 0, w - splitX, h, splitX, 0, w - splitX, h);
+        const splitX = image.width * splitPos;
         
-        ctx.beginPath();
+        const origCanvas = document.createElement('canvas');
+        origCanvas.width = image.width;
+        origCanvas.height = image.height;
+        origCanvas.getContext('2d').putImageData(originalRef.current, 0, 0);
+
+        const procCanvas = document.createElement('canvas');
+        procCanvas.width = image.width;
+        procCanvas.height = image.height;
+        procCanvas.getContext('2d').putImageData(processedRef.current, 0, 0);
+
+        ctx.drawImage(origCanvas, 0, 0, splitX, image.height, 0, 0, splitX, image.height);
+        ctx.drawImage(procCanvas, splitX, 0, image.width - splitX, image.height, splitX, 0, image.width - splitX, image.height);
+
+        // Divider
         ctx.strokeStyle = '#2F66F6';
         ctx.lineWidth = 4;
+        ctx.beginPath();
         ctx.moveTo(splitX, 0);
-        ctx.lineTo(splitX, h);
+        ctx.lineTo(splitX, image.height);
         ctx.stroke();
-      } catch (err) {
-        console.error('Draw error:', err);
+      } catch (e) {
+        console.error('Draw error:', e);
       }
-    }, [originalImageData, splitPos]);
+    }, [image, adjustments, splitPos]);
 
-    useEffect(() => {
-      if (!originalImageData) return;
-      if (processTimer.current) cancelAnimationFrame(processTimer.current);
-      
-      processTimer.current = requestAnimationFrame(() => {
-        try {
-          const curveLUT = {
-            rgb: interpolateCurve(state.toneCurve.channels.rgb, 256),
-            red: interpolateCurve(state.toneCurve.channels.red, 256),
-            green: interpolateCurve(state.toneCurve.channels.green, 256),
-            blue: interpolateCurve(state.toneCurve.channels.blue, 256)
-          };
-          
-          processImageData(originalImageData.data, processedImageDataRef.current.data, state, curveLUT);
-          drawSplitView();
-        } catch (err) {
-          console.error('Image processing error:', err);
-        }
-      });
+    const updateAdjustment = (key, value) => {
+      setAdjustments(prev => ({ ...prev, [key]: value }));
+    };
 
-      return () => cancelAnimationFrame(processTimer.current);
-    }, [state, originalImageData, drawSplitView]);
-
-    useEffect(() => {
-      drawSplitView();
-    }, [splitPos, drawSplitView]);
-
-    const updateStateLive = (newPartial) => setState(prev => ({ ...prev, ...newPartial }));
-    
-    const commitHistory = (finalState) => {
-      const activeState = finalState || state;
+    const commitHistory = () => {
       const newHistory = history.slice(0, historyIdx + 1);
-      newHistory.push(activeState);
+      newHistory.push({ ...adjustments });
       setHistory(newHistory);
       setHistoryIdx(newHistory.length - 1);
     };
 
-    const handleHSLChange = (channel, adjustment) => {
-      const newHsl = { ...state.hsl, [channel]: { ...state.hsl[channel], ...adjustment } };
-      updateStateLive({ hsl: newHsl });
+    const applyFilter = (filterName) => {
+      setSelectedFilter(filterName);
+      setAdjustments(FILTERS[filterName]);
+      commitHistory();
     };
 
-    const handleToneCurvePoints = (channel, points) => {
-      const newChannels = { ...state.toneCurve.channels, [channel]: points };
-      updateStateLive({ toneCurve: { ...state.toneCurve, channels: newChannels } });
+    const undo = () => {
+      if (historyIdx > 0) {
+        setHistoryIdx(historyIdx - 1);
+        setAdjustments(history[historyIdx - 1]);
+      }
     };
 
-    const loadPreset = (name) => {
-      let newState;
-      if (name === 'Moody Dark') newState = { ...getDefaultState(), exposure: -0.4, contrast: 0.3, highlights: -0.3, shadows: -0.1 };
-      else if (name === 'Bright Airy') newState = { ...getDefaultState(), exposure: 0.6, contrast: -0.15, highlights: -0.1, shadows: 0.4 };
-      else newState = getDefaultState();
-      setState(newState);
-      commitHistory(newState);
+    const redo = () => {
+      if (historyIdx < history.length - 1) {
+        setHistoryIdx(historyIdx + 1);
+        setAdjustments(history[historyIdx + 1]);
+      }
     };
 
-    const undo = () => { if (historyIdx > 0) { setState(history[historyIdx - 1]); setHistoryIdx(historyIdx - 1); } };
-    const redo = () => { if (historyIdx < history.length - 1) { setState(history[historyIdx + 1]); setHistoryIdx(historyIdx + 1); } };
-    
+    const reset = () => {
+      setAdjustments({ exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 });
+      setSelectedFilter('None');
+      setHistoryIdx(0);
+      setHistory([{ exposure: 0, contrast: 0, saturation: 0, highlights: 0, shadows: 0, warmth: 0, tint: 0, vibrancy: 0 }]);
+    };
+
     // Keyboard shortcuts
     useEffect(() => {
-      const handleKeyDown = (e) => {
+      const handler = (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
           e.preventDefault();
           undo();
@@ -794,263 +494,132 @@
           redo();
         }
       };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handler);
+      return () => window.removeEventListener('keydown', handler);
     }, [historyIdx, history]);
-    
-    const handleSplitDrag = (e) => {
+
+    const handleDrag = (e) => {
       if (!canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      setSplitPos(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)));
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      setSplitPos(Math.max(0, Math.min(1, x / rect.width)));
     };
 
     return (
-      <div className="flex flex-col h-screen w-full bg-[#07080a] overflow-hidden">
-        <header className="h-14 shrink-0 glass-panel border-t-0 border-x-0 flex items-center justify-between px-4 relative z-30">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-[#2F66F6] rounded-lg flex items-center justify-center font-bold text-sm">L</div>
-            <span className="font-bold text-sm tracking-tight hidden sm:inline">Luminor Studio Pro</span>
+      <div className="flex flex-col h-screen w-full bg-[#040507]">
+        {/* Header */}
+        <header className="h-14 shrink-0 glass-panel border-b border-white/5 flex items-center justify-between px-4 z-30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">✓</div>
+            <span className="font-bold text-sm hidden sm:inline">Luminor</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="tab-container">
-              <button 
-                onClick={undo} 
-                disabled={historyIdx === 0} 
-                className="btn-action px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20"
-                title="Undo (Ctrl+Z)"
-              >
-                ↩
-              </button>
-              <button 
-                onClick={redo} 
-                disabled={historyIdx === history.length - 1} 
-                className="btn-action px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20"
-                title="Redo (Ctrl+Y)"
-              >
-                ↪
-              </button>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+              <button onClick={undo} disabled={historyIdx === 0} className="btn-action px-2 py-1 text-xs hover:text-white disabled:opacity-30 text-gray-400">↩</button>
+              <button onClick={redo} disabled={historyIdx === history.length - 1} className="btn-action px-2 py-1 text-xs hover:text-white disabled:opacity-30 text-gray-400">↪</button>
             </div>
-            <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-              <span className="text-xs text-gray-400 hidden md:inline font-mono truncate max-w-xs">{user.email}</span>
-              <button 
-                onClick={onLogout} 
-                className="btn-action bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border border-white/5 text-xs px-3 py-1.5 rounded-lg transition"
-              >
-                Exit
-              </button>
-            </div>
+            <button onClick={reset} className="btn-action px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-gray-400 hover:text-white transition">Reset</button>
+            <button onClick={onLogout} className="btn-action px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 text-red-400 transition hidden sm:block">Exit</button>
           </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden relative">
-          <aside className="w-72 border-r border-white/5 bg-[#090a0d] p-4 hidden lg:flex flex-col gap-4 overflow-y-auto shrink-0">
-            <div className="glass-panel rounded-xl p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">History Stack</h3>
-              <div className="space-y-1 max-h-48 overflow-y-auto text-xs pr-1">
-                {history.map((_, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => { setState(history[idx]); setHistoryIdx(idx); }}
-                    className={`p-2 rounded-lg font-mono transition cursor-pointer ${idx === historyIdx ? 'bg-[#2F66F6]/10 text-[#2F66F6] border border-[#2F66F6]/20' : 'text-gray-500 hover:bg-white/5'}`}
-                  >
-                    Step {idx + 1}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="glass-panel rounded-xl p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Presets</h3>
-              <div className="grid grid-cols-1 gap-2">
-                {['Linear Reset', 'Moody Dark', 'Bright Airy'].map(p => (
-                  <button 
-                    key={p} 
-                    onClick={() => loadPreset(p)} 
-                    className="btn-action w-full text-left px-3 py-2 bg-white/5 hover:bg-[#2F66F6]/10 hover:border-[#2F66F6]/30 rounded-lg text-xs font-medium border border-white/5 transition"
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
-
-          <main className="flex-1 bg-[#050507] p-4 flex items-center justify-center relative">
-            {imageError && (
-              <div className="text-center space-y-2 animate-fadeIn">
-                <p className="text-sm text-red-400 font-mono">{imageError}</p>
-                <p className="text-xs text-gray-500">Please reload the page to try again</p>
-              </div>
-            )}
-            {!originalImageData && !imageError && (
-              <div className="text-center space-y-2 animate-pulse">
-                <div className="w-8 h-8 border-2 border-[#2F66F6] border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs text-gray-500 font-mono">Initializing editor...</p>
-              </div>
-            )}
-            {originalImageData && (
-              <div className="relative shadow-2xl rounded-xl overflow-hidden border border-white/10 max-w-full max-h-[70vh] lg:max-h-[80vh]">
-                <canvas 
-                  ref={canvasRef} 
+          {/* Main Canvas */}
+          <main className="flex-1 bg-[#050507] flex items-center justify-center p-4">
+            {image && (
+              <div className="relative shadow-2xl rounded-xl overflow-hidden border border-white/10 max-w-full max-h-full">
+                <canvas
+                  ref={canvasRef}
                   className="max-w-full h-auto object-contain cursor-ew-resize block"
-                  onMouseMove={(e) => e.buttons === 1 && handleSplitDrag(e)}
-                  onTouchMove={handleSplitDrag}
+                  onMouseMove={(e) => e.buttons === 1 && handleDrag(e)}
+                  onTouchMove={handleDrag}
                 />
               </div>
             )}
           </main>
 
-          <aside className="w-80 border-l border-white/5 bg-[#090a0d] p-4 hidden lg:block overflow-y-auto shrink-0 space-y-5">
-            <div className="glass-panel rounded-xl p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Core Adjustments</h3>
-              <ParamSlider 
-                label="Exposure" 
-                value={state.exposure} 
-                min={-2} 
-                max={2} 
-                step={0.01} 
-                onChange={(v) => updateStateLive({ exposure: v })} 
-                onCommit={() => commitHistory()} 
-              />
-              <ParamSlider 
-                label="Contrast" 
-                value={state.contrast} 
-                min={-1} 
-                max={1} 
-                step={0.01} 
-                onChange={(v) => updateStateLive({ contrast: v })} 
-                onCommit={() => commitHistory()} 
-              />
-              <ParamSlider 
-                label="Highlights" 
-                value={state.highlights} 
-                min={-1} 
-                max={1} 
-                step={0.01} 
-                onChange={(v) => updateStateLive({ highlights: v })} 
-                onCommit={() => commitHistory()} 
-              />
-              <ParamSlider 
-                label="Shadows" 
-                value={state.shadows} 
-                min={-1} 
-                max={1} 
-                step={0.01} 
-                onChange={(v) => updateStateLive({ shadows: v })} 
-                onCommit={() => commitHistory()} 
-              />
-            </div>
-            <div className="glass-panel rounded-xl p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">HSL Color Matrix</h3>
-              <HSLMatrix hslState={state.hsl} onHSLChange={handleHSLChange} onCommit={() => commitHistory()} />
-            </div>
-            <div className="glass-panel rounded-xl p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Tone Curve</h3>
-                <select 
-                  value={state.toneCurve.activeChannel} 
-                  onChange={(e) => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: e.target.value } })}
-                  className="glass-input px-2.5 py-1 text-xs font-mono cursor-pointer"
-                >
-                  {['rgb', 'red', 'green', 'blue'].map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
-                </select>
+          {/* Desktop Sidebar */}
+          <aside className="w-80 border-l border-white/5 bg-[#090a0d] p-4 hidden lg:flex flex-col gap-4 overflow-y-auto shrink-0">
+            {/* Filters */}
+            <div className="glass-panel rounded-lg p-4">
+              <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase">Filters</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.keys(FILTERS).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => applyFilter(f)}
+                    className={`btn-action px-3 py-2 text-xs rounded-lg border transition ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                  >
+                    {f}
+                  </button>
+                ))}
               </div>
-              <ToneCurveEditor 
-                points={state.toneCurve.channels[state.toneCurve.activeChannel]} 
-                channelId={state.toneCurve.activeChannel}
-                onChange={(pts) => handleToneCurvePoints(state.toneCurve.activeChannel, pts)}
-                onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} 
-              />
+            </div>
+
+            {/* Adjustments */}
+            <div className="glass-panel rounded-lg p-4">
+              <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase">Adjustments</h3>
+              <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Highlights" value={adjustments.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('highlights', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Shadows" value={adjustments.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('shadows', v)} onCommit={commitHistory} unit="" />
+            </div>
+
+            {/* Color */}
+            <div className="glass-panel rounded-lg p-4">
+              <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase">Color</h3>
+              <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Tint" value={adjustments.tint} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('tint', v)} onCommit={commitHistory} unit="" />
+              <Slider label="Vibrancy" value={adjustments.vibrancy} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('vibrancy', v)} onCommit={commitHistory} unit="" />
             </div>
           </aside>
         </div>
 
-        {/* Mobile Bottom Drawer */}
-        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-x-0 border-b-0 rounded-t-2xl transition-transform duration-300 transform ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%-48px)]'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div 
-            onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)} 
-            className="h-12 flex items-center justify-between px-4 border-b border-white/5 cursor-pointer bg-white/[0.02]"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F66F6] rounded-full animate-ping" />
-              <span className="text-xs font-bold tracking-wider uppercase text-gray-300">
-                {mobileTab === 'basic' && 'Core Tools'}
-                {mobileTab === 'curves' && 'Tone Curves'}
-                {mobileTab === 'hsl' && 'HSL Matrix'}
-                {mobileTab === 'presets' && 'Presets'}
-              </span>
-            </div>
-            <span className="text-gray-400 text-sm font-mono">{isMobilePanelOpen ? '✕' : '▲'}</span>
+        {/* Mobile Bottom Sheet */}
+        <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-t border-white/5 rounded-t-2xl transition-transform duration-300 ${showMobilePanel ? 'translate-y-0' : 'translate-y-[calc(100%-56px)]'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div onClick={() => setShowMobilePanel(!showMobilePanel)} className="h-14 flex items-center justify-between px-4 cursor-pointer">
+            <span className="text-xs font-bold text-gray-300 uppercase">{mobileTab === 'filter' ? 'Filters' : 'Adjust'}</span>
+            <span className="text-gray-400">{showMobilePanel ? '✕' : '▲'}</span>
           </div>
-          <div className="p-4 max-h-[40vh] overflow-y-auto bg-[#07080a]">
-            {mobileTab === 'basic' && (
-              <>
-                <ParamSlider label="Exposure" value={state.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateStateLive({ exposure: v })} onCommit={() => commitHistory()} />
-                <ParamSlider label="Contrast" value={state.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ contrast: v })} onCommit={() => commitHistory()} />
-                <ParamSlider label="Highlights" value={state.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ highlights: v })} onCommit={() => commitHistory()} />
-                <ParamSlider label="Shadows" value={state.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ shadows: v })} onCommit={() => commitHistory()} />
-              </>
-            )}
-            {mobileTab === 'curves' && (
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex gap-1 w-full justify-center">
-                  {['rgb', 'red', 'green', 'blue'].map(c => (
-                    <button 
-                      key={c} 
-                      onClick={() => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: c } })}
-                      className={`btn-action px-3 py-1 text-xs rounded-lg font-mono transition ${state.toneCurve.activeChannel === c ? 'bg-[#2F66F6] text-white shadow-[0_4px_12px_rgba(47,102,246,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-                    >
-                      {c.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-                <ToneCurveEditor 
-                  points={state.toneCurve.channels[state.toneCurve.activeChannel]} 
-                  channelId={state.toneCurve.activeChannel}
-                  onChange={(pts) => handleToneCurvePoints(state.toneCurve.activeChannel, pts)}
-                  onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} 
-                />
-              </div>
-            )}
-            {mobileTab === 'hsl' && <HSLMatrix hslState={state.hsl} onHSLChange={handleHSLChange} onCommit={() => commitHistory()} />}
-            {mobileTab === 'presets' && (
+
+          <div className="p-4 max-h-[50vh] overflow-y-auto space-y-4 bg-[#07080a]">
+            {mobileTab === 'filter' ? (
               <div className="grid grid-cols-2 gap-2">
-                {['Linear Reset', 'Moody Dark', 'Bright Airy'].map(p => (
-                  <button 
-                    key={p} 
-                    onClick={() => { loadPreset(p); setIsMobilePanelOpen(false); }} 
-                    className="btn-action px-3 py-3 bg-white/5 hover:bg-[#2F66F6]/10 text-center text-xs font-medium rounded-xl border border-white/5 hover:border-[#2F66F6]/30 transition"
+                {Object.keys(FILTERS).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => { applyFilter(f); setShowMobilePanel(false); }}
+                    className={`btn-action px-3 py-3 text-xs rounded-lg border transition ${selectedFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
                   >
-                    {p}
+                    {f}
                   </button>
                 ))}
               </div>
+            ) : (
+              <>
+                <Slider label="Exposure" value={adjustments.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateAdjustment('exposure', v)} onCommit={commitHistory} unit="" />
+                <Slider label="Contrast" value={adjustments.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('contrast', v)} onCommit={commitHistory} unit="" />
+                <Slider label="Saturation" value={adjustments.saturation} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('saturation', v)} onCommit={commitHistory} unit="" />
+                <Slider label="Warmth" value={adjustments.warmth} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('warmth', v)} onCommit={commitHistory} unit="" />
+                <Slider label="Highlights" value={adjustments.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('highlights', v)} onCommit={commitHistory} unit="" />
+                <Slider label="Shadows" value={adjustments.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateAdjustment('shadows', v)} onCommit={commitHistory} unit="" />
+              </>
             )}
           </div>
-          <nav className="h-14 border-t border-white/5 flex items-center justify-around px-2 bg-[#090a0d] shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <button 
-              onClick={() => { setMobileTab('basic'); setIsMobilePanelOpen(true); }} 
-              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'basic' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
-            >
-              <span className="text-base">⚲</span>Basic
+
+          <nav className="h-14 border-t border-white/5 flex items-center justify-around bg-[#090a0d] shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <button onClick={() => { setMobileTab('adjust'); setShowMobilePanel(true); }} className={`flex flex-col items-center gap-1 text-[10px] ${mobileTab === 'adjust' ? 'text-blue-500' : 'text-gray-400'}`}>
+              <span className="text-lg">⚙</span>Adjust
             </button>
-            <button 
-              onClick={() => { setMobileTab('curves'); setIsMobilePanelOpen(true); }} 
-              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'curves' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
-            >
-              <span className="text-base">📈</span>Curves
+            <button onClick={() => { setMobileTab('filter'); setShowMobilePanel(true); }} className={`flex flex-col items-center gap-1 text-[10px] ${mobileTab === 'filter' ? 'text-blue-500' : 'text-gray-400'}`}>
+              <span className="text-lg">✨</span>Filters
             </button>
-            <button 
-              onClick={() => { setMobileTab('hsl'); setIsMobilePanelOpen(true); }} 
-              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'hsl' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
-            >
-              <span className="text-base">🎨</span>HSL
+            <button onClick={reset} className="flex flex-col items-center gap-1 text-[10px] text-gray-400">
+              <span className="text-lg">🔄</span>Reset
             </button>
-            <button 
-              onClick={() => { setMobileTab('presets'); setIsMobilePanelOpen(true); }} 
-              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'presets' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
-            >
-              <span className="text-base">⚡</span>Presets
+            <button onClick={onLogout} className="flex flex-col items-center gap-1 text-[10px] text-red-400">
+              <span className="text-lg">✕</span>Exit
             </button>
           </nav>
         </div>
@@ -1058,9 +627,14 @@
     );
   };
 
+  // ========== APP ==========
   const App = () => {
     const [user, setUser] = useState(null);
-    return user ? <LuminorStudio user={user} onLogout={() => setUser(null)} /> : <AuthGuard onAuthSuccess={setUser} />;
+    return user ? (
+      <PhotoEditor user={user} onLogout={() => setUser(null)} />
+    ) : (
+      <AuthGuard onAuthSuccess={setUser} />
+    );
   };
 
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
