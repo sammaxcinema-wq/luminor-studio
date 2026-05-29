@@ -32,6 +32,16 @@
 <script type="text/babel" data-type="module">
   const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
+  // ---------- VALIDATION UTILITIES ----------
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePassword = (password) => {
+    return password && password.length >= 6;
+  };
+
   // ---------- HIGH-PERFORMANCE MATH & IMAGE UTILITIES ----------
   function catmullRomToBezierPoints(p0, p1, p2, p3) {
     return [
@@ -74,7 +84,6 @@
     purple: { min: 261, max: 320 }, magenta: { min: 321, max: 360 }
   };
 
-  // Fast inline processing using local stack primitives (no per-pixel function calls)
   function processImageData(srcData, dstData, state, curveLUT) {
     const { exposure, contrast, highlights, shadows, hsl } = state;
     const activeModifiers = [];
@@ -113,7 +122,6 @@
       let nb = curveLUT.blue[bComp];
 
       if (dynamicHsl) {
-        // Inline RGB -> HSL conversion
         let rNorm = nr / 255, gNorm = ng / 255, bNorm = nb / 255;
         let max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
         let h = 0, s = 0, l = (max + min) / 2;
@@ -140,7 +148,6 @@
         }
 
         if (modified) {
-          // Inline HSL -> RGB conversion
           s /= 100; l /= 100;
           let c = (1 - Math.abs(2 * l - 1)) * s;
           let hp = h / 60;
@@ -173,13 +180,23 @@
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const getErrorMessage = () => {
+      if (!email) return 'Email is required.';
+      if (!validateEmail(email)) return 'Please enter a valid email address.';
+      if (!password) return 'Password is required.';
+      if (!validatePassword(password)) return 'Password must be at least 6 characters.';
+      return '';
+    };
+
     const handleSubmit = (e) => {
       e.preventDefault();
-      setError('');
-      if (!email.includes('@') || password.length < 6) {
-        setError('Valid email & password (min 6 characters) required.');
+      const err = getErrorMessage();
+      if (err) {
+        setError(err);
         return;
       }
+      
+      setError('');
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
@@ -199,23 +216,52 @@
             <h1 className="text-xl font-bold tracking-tight">Luminor Studio Pro</h1>
             <p className="text-xs text-gray-400 mt-1">Enterprise Creative Suite</p>
           </div>
-          {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">{error}</div>}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 animate-fadeIn">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5">Email</label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={loading}
-                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none" placeholder="creator@luminor.io" />
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value.trim())} 
+                disabled={loading}
+                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none disabled:opacity-50" 
+                placeholder="creator@luminor.io"
+                autoComplete="email"
+              />
             </div>
             <div>
               <label className="block text-[11px] uppercase tracking-wider text-gray-400 mb-1.5">Password</label>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={loading}
-                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none" placeholder="••••••••" />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                disabled={loading}
+                className="w-full glass-input px-4 py-3 rounded-xl text-sm text-white outline-none disabled:opacity-50" 
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full bg-[#2F66F6] hover:bg-[#2554d6] active:scale-[0.99] disabled:opacity-50 text-white font-medium text-sm py-3 rounded-xl transition shadow-lg shadow-[#2F66F6]/20 flex items-center justify-center gap-2">
-              {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Access Workspace'}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-[#2F66F6] hover:bg-[#2554d6] active:scale-[0.99] disabled:opacity-50 text-white font-medium text-sm py-3 rounded-xl transition shadow-lg shadow-[#2F66F6]/20 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                'Access Workspace'
+              )}
             </button>
           </form>
+          <p className="text-[10px] text-gray-500 mt-6 text-center">Demo credentials: any valid email & 6+ character password</p>
         </div>
       </div>
     );
@@ -231,10 +277,18 @@
           <span className="font-mono text-white/90">{value.toFixed(2)}{unit}</span>
         </div>
         <div className="relative py-2 -my-2" style={{ minHeight: '44px' }}>
-          <input id={id} type="range" min={min} max={max} step={step} value={value}
+          <input 
+            id={id} 
+            type="range" 
+            min={min} 
+            max={max} 
+            step={step} 
+            value={value}
             onChange={(e) => onChange(parseFloat(e.target.value))}
-            onMouseUp={onCommit} onTouchEnd={onCommit}
-            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#2F66F6]" />
+            onMouseUp={onCommit} 
+            onTouchEnd={onCommit}
+            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#2F66F6]" 
+          />
         </div>
       </div>
     );
@@ -244,20 +298,51 @@
     const channels = ['red','orange','yellow','green','aqua','blue','purple','magenta'];
     const [active, setActive] = useState('red');
     const current = hslState[active] || { hue: 0, sat: 0, lum: 0 };
+    
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5 pb-1">
           {channels.map(ch => (
-            <button key={ch} onClick={() => setActive(ch)}
-              className={`px-3 py-1.5 text-xs rounded-full border transition-all shrink-0 ${active === ch ? 'bg-[#2F66F6] text-white border-transparent shadow-md' : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10'}`}>
+            <button 
+              key={ch} 
+              onClick={() => setActive(ch)}
+              className={`px-3 py-1.5 text-xs rounded-full border transition-all shrink-0 ${active === ch ? 'bg-[#2F66F6] text-white border-transparent shadow-md' : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10'}`}
+            >
               {ch.charAt(0).toUpperCase() + ch.slice(1)}
             </button>
           ))}
         </div>
         <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-          <ParamSlider label="Hue" value={current.hue} min={-180} max={180} step={1} onChange={(v) => onHSLChange(active, { hue: v })} onCommit={onCommit} unit="°" />
-          <ParamSlider label="Saturation" value={current.sat} min={-100} max={100} step={1} onChange={(v) => onHSLChange(active, { sat: v })} onCommit={onCommit} unit="%" />
-          <ParamSlider label="Luminance" value={current.lum} min={-100} max={100} step={1} onChange={(v) => onHSLChange(active, { lum: v })} onCommit={onCommit} unit="%" />
+          <ParamSlider 
+            label="Hue" 
+            value={current.hue} 
+            min={-180} 
+            max={180} 
+            step={1} 
+            onChange={(v) => onHSLChange(active, { hue: v })} 
+            onCommit={onCommit} 
+            unit="°" 
+          />
+          <ParamSlider 
+            label="Saturation" 
+            value={current.sat} 
+            min={-100} 
+            max={100} 
+            step={1} 
+            onChange={(v) => onHSLChange(active, { sat: v })} 
+            onCommit={onCommit} 
+            unit="%" 
+          />
+          <ParamSlider 
+            label="Luminance" 
+            value={current.lum} 
+            min={-100} 
+            max={100} 
+            step={1} 
+            onChange={(v) => onHSLChange(active, { lum: v })} 
+            onCommit={onCommit} 
+            unit="%" 
+          />
         </div>
       </div>
     );
@@ -339,18 +424,45 @@
 
     return (
       <div className="flex flex-col items-center bg-black/40 p-3 rounded-xl border border-white/5">
-        <svg ref={svgRef} width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="bg-black/80 rounded-lg cursor-crosshair select-none" onClick={handleClick}>
-          <defs><pattern id={`grid-${channelId}`} width={size / 4} height={size / 4} patternUnits="userSpaceOnUse"><path d={`M ${size / 4} 0 L 0 0 0 ${size / 4}`} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" /></pattern></defs>
+        <svg 
+          ref={svgRef} 
+          width={size} 
+          height={size} 
+          viewBox={`0 0 ${size} ${size}`} 
+          className="bg-black/80 rounded-lg cursor-crosshair select-none" 
+          onClick={handleClick}
+        >
+          <defs>
+            <pattern id={`grid-${channelId}`} width={size / 4} height={size / 4} patternUnits="userSpaceOnUse">
+              <path d={`M ${size / 4} 0 L 0 0 0 ${size / 4}`} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+            </pattern>
+          </defs>
           <rect width={size} height={size} fill={`url(#grid-${channelId})`} />
           <path d={curvePath} stroke="#2F66F6" strokeWidth="2.5" fill="none" strokeLinecap="round" />
           {points.map((p, idx) => {
             const { x, y } = toSvg(p);
             return (
-              <circle key={idx} cx={x} cy={y} r="7" fill="#2F66F6" stroke="white" strokeWidth="2"
+              <circle 
+                key={idx} 
+                cx={x} 
+                cy={y} 
+                r="7" 
+                fill="#2F66F6" 
+                stroke="white" 
+                strokeWidth="2"
                 className="cursor-grab active:cursor-grabbing"
                 onMouseDown={(e) => { e.stopPropagation(); setDragIdx(idx); }}
                 onTouchStart={(e) => { e.stopPropagation(); setDragIdx(idx); }}
-                onDoubleClick={(e) => { e.stopPropagation(); if (points.length > 2) { const n = [...points]; n.splice(idx, 1); onChange(n); if (onCommit) onCommit(n); } }} />
+                onDoubleClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (points.length > 2) { 
+                    const n = [...points]; 
+                    n.splice(idx, 1); 
+                    onChange(n); 
+                    if (onCommit) onCommit(n); 
+                  } 
+                }} 
+              />
             );
           })}
         </svg>
@@ -382,6 +494,7 @@
     const [history, setHistory] = useState([getDefaultState()]);
     const [historyIdx, setHistoryIdx] = useState(0);
     const [originalImageData, setOriginalImageData] = useState(null);
+    const [imageError, setImageError] = useState(null);
     const [splitPos, setSplitPos] = useState(0.5);
     const [mobileTab, setMobileTab] = useState('basic');
     const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
@@ -392,7 +505,6 @@
     const processedImageDataRef = useRef(null);
     const processTimer = useRef(null);
 
-    // Initialize offscreen canvas caches
     useEffect(() => {
       leftCanvasRef.current = document.createElement('canvas');
       rightCanvasRef.current = document.createElement('canvas');
@@ -402,21 +514,40 @@
       const img = new Image();
       img.crossOrigin = 'Anonymous';
       img.src = 'https://images.unsplash.com/photo-1682695796954-bad0d3f3f1a4?w=1000&auto=format';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const aspect = img.width / img.height;
-        canvas.width = Math.min(1000, img.width);
-        canvas.height = canvas.width / aspect;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        setOriginalImageData(originalData);
-        processedImageDataRef.current = new ImageData(
-          new Uint8ClampedArray(originalData.data.length),
-          originalData.width,
-          originalData.height
-        );
+      
+      const handleLoad = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const aspect = img.width / img.height;
+          canvas.width = Math.min(1000, img.width);
+          canvas.height = canvas.width / aspect;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Failed to get 2D context');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          setOriginalImageData(originalData);
+          processedImageDataRef.current = new ImageData(
+            new Uint8ClampedArray(originalData.data.length),
+            originalData.width,
+            originalData.height
+          );
+          setImageError(null);
+        } catch (err) {
+          setImageError('Failed to process image: ' + err.message);
+        }
+      };
+
+      const handleError = () => {
+        setImageError('Failed to load image. Please check your connection.');
+      };
+
+      img.addEventListener('load', handleLoad);
+      img.addEventListener('error', handleError);
+
+      return () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
       };
     }, []);
 
@@ -424,16 +555,23 @@
       if (!canvasRef.current || !originalImageData || !processedImageDataRef.current) return;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
       const w = originalImageData.width, h = originalImageData.height;
       
       if (canvas.width !== w) {
-        canvas.width = w; canvas.height = h;
-        leftCanvasRef.current.width = w; leftCanvasRef.current.height = h;
-        rightCanvasRef.current.width = w; rightCanvasRef.current.height = h;
-        leftCanvasRef.current.getContext('2d').putImageData(originalImageData, 0, 0);
+        canvas.width = w; 
+        canvas.height = h;
+        leftCanvasRef.current.width = w; 
+        leftCanvasRef.current.height = h;
+        rightCanvasRef.current.width = w; 
+        rightCanvasRef.current.height = h;
+        const leftCtx = leftCanvasRef.current.getContext('2d');
+        if (leftCtx) leftCtx.putImageData(originalImageData, 0, 0);
       }
 
-      rightCanvasRef.current.getContext('2d').putImageData(processedImageDataRef.current, 0, 0);
+      const rightCtx = rightCanvasRef.current.getContext('2d');
+      if (rightCtx) rightCtx.putImageData(processedImageDataRef.current, 0, 0);
 
       const splitX = w * splitPos;
       ctx.drawImage(leftCanvasRef.current, 0, 0, splitX, h, 0, 0, splitX, h);
@@ -452,15 +590,19 @@
       if (processTimer.current) cancelAnimationFrame(processTimer.current);
       
       processTimer.current = requestAnimationFrame(() => {
-        const curveLUT = {
-          rgb: interpolateCurve(state.toneCurve.channels.rgb, 256),
-          red: interpolateCurve(state.toneCurve.channels.red, 256),
-          green: interpolateCurve(state.toneCurve.channels.green, 256),
-          blue: interpolateCurve(state.toneCurve.channels.blue, 256)
-        };
-        
-        processImageData(originalImageData.data, processedImageDataRef.current.data, state, curveLUT);
-        drawSplitView();
+        try {
+          const curveLUT = {
+            rgb: interpolateCurve(state.toneCurve.channels.rgb, 256),
+            red: interpolateCurve(state.toneCurve.channels.red, 256),
+            green: interpolateCurve(state.toneCurve.channels.green, 256),
+            blue: interpolateCurve(state.toneCurve.channels.blue, 256)
+          };
+          
+          processImageData(originalImageData.data, processedImageDataRef.current.data, state, curveLUT);
+          drawSplitView();
+        } catch (err) {
+          console.error('Image processing error:', err);
+        }
       });
 
       return () => cancelAnimationFrame(processTimer.current);
@@ -518,12 +660,31 @@
           </div>
           <div className="flex items-center gap-4">
             <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
-              <button onClick={undo} disabled={historyIdx === 0} className="px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20 transition">↩</button>
-              <button onClick={redo} disabled={historyIdx === history.length - 1} className="px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20 transition">↪</button>
+              <button 
+                onClick={undo} 
+                disabled={historyIdx === 0} 
+                className="px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20 transition"
+                title="Undo"
+              >
+                ↩
+              </button>
+              <button 
+                onClick={redo} 
+                disabled={historyIdx === history.length - 1} 
+                className="px-2.5 py-1 text-xs text-gray-400 hover:text-white disabled:opacity-20 transition"
+                title="Redo"
+              >
+                ↪
+              </button>
             </div>
             <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-              <span className="text-xs text-gray-400 hidden md:inline font-mono">{user.email}</span>
-              <button onClick={onLogout} className="bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border border-white/5 text-xs px-3 py-1.5 rounded-lg transition">Exit</button>
+              <span className="text-xs text-gray-400 hidden md:inline font-mono truncate max-w-xs">{user.email}</span>
+              <button 
+                onClick={onLogout} 
+                className="bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border border-white/5 text-xs px-3 py-1.5 rounded-lg transition"
+              >
+                Exit
+              </button>
             </div>
           </div>
         </header>
@@ -534,7 +695,11 @@
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">History Stack</h3>
               <div className="space-y-1 max-h-48 overflow-y-auto text-xs pr-1">
                 {history.map((_, idx) => (
-                  <div key={idx} className={`p-2 rounded-lg font-mono transition ${idx === historyIdx ? 'bg-[#2F66F6]/10 text-[#2F66F6] border border-[#2F66F6]/20' : 'text-gray-500'}`}>
+                  <div 
+                    key={idx} 
+                    onClick={() => { setState(history[idx]); setHistoryIdx(idx); }}
+                    className={`p-2 rounded-lg font-mono transition cursor-pointer ${idx === historyIdx ? 'bg-[#2F66F6]/10 text-[#2F66F6] border border-[#2F66F6]/20' : 'text-gray-500 hover:bg-white/5'}`}
+                  >
                     Step {idx + 1}
                   </div>
                 ))}
@@ -544,14 +709,26 @@
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Presets</h3>
               <div className="grid grid-cols-1 gap-2">
                 {['Linear Reset', 'Moody Dark', 'Bright Airy'].map(p => (
-                  <button key={p} onClick={() => loadPreset(p)} className="w-full text-left px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium border border-white/5 transition">{p}</button>
+                  <button 
+                    key={p} 
+                    onClick={() => loadPreset(p)} 
+                    className="w-full text-left px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium border border-white/5 transition"
+                  >
+                    {p}
+                  </button>
                 ))}
               </div>
             </div>
           </aside>
 
           <main className="flex-1 bg-[#050507] p-4 flex items-center justify-center relative">
-            {!originalImageData && (
+            {imageError && (
+              <div className="text-center space-y-2 animate-fadeIn">
+                <p className="text-sm text-red-400 font-mono">{imageError}</p>
+                <p className="text-xs text-gray-500">Using demo image may require internet connection</p>
+              </div>
+            )}
+            {!originalImageData && !imageError && (
               <div className="text-center space-y-2 animate-pulse">
                 <div className="w-8 h-8 border-2 border-[#2F66F6] border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs text-gray-500 font-mono">Loading high‑res asset...</p>
@@ -559,9 +736,12 @@
             )}
             {originalImageData && (
               <div className="relative shadow-2xl rounded-xl overflow-hidden border border-white/10 max-w-full max-h-[70vh] lg:max-h-[80vh]">
-                <canvas ref={canvasRef} className="max-w-full h-auto object-contain cursor-ew-resize block"
+                <canvas 
+                  ref={canvasRef} 
+                  className="max-w-full h-auto object-contain cursor-ew-resize block"
                   onMouseMove={(e) => e.buttons === 1 && handleSplitDrag(e)}
-                  onTouchMove={handleSplitDrag} />
+                  onTouchMove={handleSplitDrag}
+                />
               </div>
             )}
           </main>
@@ -569,10 +749,42 @@
           <aside className="w-80 border-l border-white/5 bg-[#090a0d] p-4 hidden lg:block overflow-y-auto shrink-0 space-y-5">
             <div className="glass-panel rounded-xl p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Core Adjustments</h3>
-              <ParamSlider label="Exposure" value={state.exposure} min={-2} max={2} step={0.01} onChange={(v) => updateStateLive({ exposure: v })} onCommit={() => commitHistory()} />
-              <ParamSlider label="Contrast" value={state.contrast} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ contrast: v })} onCommit={() => commitHistory()} />
-              <ParamSlider label="Highlights" value={state.highlights} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ highlights: v })} onCommit={() => commitHistory()} />
-              <ParamSlider label="Shadows" value={state.shadows} min={-1} max={1} step={0.01} onChange={(v) => updateStateLive({ shadows: v })} onCommit={() => commitHistory()} />
+              <ParamSlider 
+                label="Exposure" 
+                value={state.exposure} 
+                min={-2} 
+                max={2} 
+                step={0.01} 
+                onChange={(v) => updateStateLive({ exposure: v })} 
+                onCommit={() => commitHistory()} 
+              />
+              <ParamSlider 
+                label="Contrast" 
+                value={state.contrast} 
+                min={-1} 
+                max={1} 
+                step={0.01} 
+                onChange={(v) => updateStateLive({ contrast: v })} 
+                onCommit={() => commitHistory()} 
+              />
+              <ParamSlider 
+                label="Highlights" 
+                value={state.highlights} 
+                min={-1} 
+                max={1} 
+                step={0.01} 
+                onChange={(v) => updateStateLive({ highlights: v })} 
+                onCommit={() => commitHistory()} 
+              />
+              <ParamSlider 
+                label="Shadows" 
+                value={state.shadows} 
+                min={-1} 
+                max={1} 
+                step={0.01} 
+                onChange={(v) => updateStateLive({ shadows: v })} 
+                onCommit={() => commitHistory()} 
+              />
             </div>
             <div className="glass-panel rounded-xl p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">HSL Color Matrix</h3>
@@ -581,21 +793,30 @@
             <div className="glass-panel rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Tone Curve</h3>
-                <select value={state.toneCurve.activeChannel} onChange={(e) => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: e.target.value } })}
-                  className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-xs font-mono outline-none">
+                <select 
+                  value={state.toneCurve.activeChannel} 
+                  onChange={(e) => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: e.target.value } })}
+                  className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-xs font-mono outline-none"
+                >
                   {['rgb', 'red', 'green', 'blue'].map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                 </select>
               </div>
-              <ToneCurveEditor points={state.toneCurve.channels[state.toneCurve.activeChannel]} channelId={state.toneCurve.activeChannel}
+              <ToneCurveEditor 
+                points={state.toneCurve.channels[state.toneCurve.activeChannel]} 
+                channelId={state.toneCurve.activeChannel}
                 onChange={(pts) => handleToneCurvePoints(state.toneCurve.activeChannel, pts)}
-                onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} />
+                onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} 
+              />
             </div>
           </aside>
         </div>
 
         {/* Mobile Bottom Drawer */}
         <div className={`lg:hidden fixed inset-x-0 bottom-0 z-40 glass-panel border-x-0 border-b-0 rounded-t-2xl transition-transform duration-300 transform safe-bottom ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%-48px)]'}`}>
-          <div onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)} className="h-12 flex items-center justify-between px-4 border-b border-white/5 cursor-pointer bg-white/[0.02]">
+          <div 
+            onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)} 
+            className="h-12 flex items-center justify-between px-4 border-b border-white/5 cursor-pointer bg-white/[0.02]"
+          >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-[#2F66F6] rounded-full animate-ping" />
               <span className="text-xs font-bold tracking-wider uppercase text-gray-300">
@@ -605,7 +826,7 @@
                 {mobileTab === 'presets' && 'Presets'}
               </span>
             </div>
-            <span className="text-gray-400 text-sm font-mono">{isMobilePanelOpen ? '✕ Close' : '▲ Open Panel'}</span>
+            <span className="text-gray-400 text-sm font-mono">{isMobilePanelOpen ? '✕' : '▲'}</span>
           </div>
           <div className="p-4 max-h-[40vh] overflow-y-auto bg-[#07080a]">
             {mobileTab === 'basic' && (
@@ -620,31 +841,63 @@
               <div className="flex flex-col items-center gap-3">
                 <div className="flex gap-1 w-full justify-center">
                   {['rgb', 'red', 'green', 'blue'].map(c => (
-                    <button key={c} onClick={() => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: c } })}
-                      className={`px-3 py-1 text-xs rounded-lg font-mono transition ${state.toneCurve.activeChannel === c ? 'bg-[#2F66F6] text-white' : 'bg-white/5 text-gray-400'}`}>
+                    <button 
+                      key={c} 
+                      onClick={() => updateStateLive({ toneCurve: { ...state.toneCurve, activeChannel: c } })}
+                      className={`px-3 py-1 text-xs rounded-lg font-mono transition ${state.toneCurve.activeChannel === c ? 'bg-[#2F66F6] text-white' : 'bg-white/5 text-gray-400'}`}
+                    >
                       {c.toUpperCase()}
                     </button>
                   ))}
                 </div>
-                <ToneCurveEditor points={state.toneCurve.channels[state.toneCurve.activeChannel]} channelId={state.toneCurve.activeChannel}
+                <ToneCurveEditor 
+                  points={state.toneCurve.channels[state.toneCurve.activeChannel]} 
+                  channelId={state.toneCurve.activeChannel}
                   onChange={(pts) => handleToneCurvePoints(state.toneCurve.activeChannel, pts)}
-                  onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} />
+                  onCommit={(f) => { const ch = { ...state.toneCurve.channels, [state.toneCurve.activeChannel]: f }; commitHistory({ ...state, toneCurve: { ...state.toneCurve, channels: ch } }); }} 
+                />
               </div>
             )}
             {mobileTab === 'hsl' && <HSLMatrix hslState={state.hsl} onHSLChange={handleHSLChange} onCommit={() => commitHistory()} />}
             {mobileTab === 'presets' && (
               <div className="grid grid-cols-2 gap-2">
                 {['Linear Reset', 'Moody Dark', 'Bright Airy'].map(p => (
-                  <button key={p} onClick={() => { loadPreset(p); setIsMobilePanelOpen(false); }} className="px-3 py-3 bg-white/5 text-center text-xs font-medium rounded-xl border border-white/5">{p}</button>
+                  <button 
+                    key={p} 
+                    onClick={() => { loadPreset(p); setIsMobilePanelOpen(false); }} 
+                    className="px-3 py-3 bg-white/5 hover:bg-white/10 text-center text-xs font-medium rounded-xl border border-white/5 transition"
+                  >
+                    {p}
+                  </button>
                 ))}
               </div>
             )}
           </div>
           <nav className="h-14 border-t border-white/5 flex items-center justify-around px-2 bg-[#090a0d] safe-bottom shrink-0">
-            <button onClick={() => { setMobileTab('basic'); setIsMobilePanelOpen(true); }} className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'basic' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}><span className="text-base">⚲</span>Basic</button>
-            <button onClick={() => { setMobileTab('curves'); setIsMobilePanelOpen(true); }} className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'curves' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}><span className="text-base">📈</span>Curves</button>
-            <button onClick={() => { setMobileTab('hsl'); setIsMobilePanelOpen(true); }} className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'hsl' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}><span className="text-base">🎨</span>HSL</button>
-            <button onClick={() => { setMobileTab('presets'); setIsMobilePanelOpen(true); }} className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'presets' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}><span className="text-base">⚡</span>Presets</button>
+            <button 
+              onClick={() => { setMobileTab('basic'); setIsMobilePanelOpen(true); }} 
+              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'basic' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
+            >
+              <span className="text-base">⚲</span>Basic
+            </button>
+            <button 
+              onClick={() => { setMobileTab('curves'); setIsMobilePanelOpen(true); }} 
+              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'curves' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
+            >
+              <span className="text-base">📈</span>Curves
+            </button>
+            <button 
+              onClick={() => { setMobileTab('hsl'); setIsMobilePanelOpen(true); }} 
+              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'hsl' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
+            >
+              <span className="text-base">🎨</span>HSL
+            </button>
+            <button 
+              onClick={() => { setMobileTab('presets'); setIsMobilePanelOpen(true); }} 
+              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] transition font-medium ${mobileTab === 'presets' && isMobilePanelOpen ? 'text-[#2F66F6]' : 'text-gray-400'}`}
+            >
+              <span className="text-base">⚡</span>Presets
+            </button>
           </nav>
         </div>
       </div>
