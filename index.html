@@ -3,1123 +3,990 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Luminor Studio Pro</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: blob:; connect-src 'self';" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Photo Editor Pro – Clone</title>
     <style>
-        html {
-            scrollbar-width: thin;
-            scrollbar-color: #f97316 #1f2937;
+        /* ── Reset & Base ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #0f0f12;
+            color: #f5f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 12px;
         }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-            border-radius: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #f97316;
-            border-radius: 8px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ea580c;
+        .app {
+            max-width: 500px;
+            width: 100%;
+            background: #1c1c1e;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            padding: 16px 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 6px;
-            border-radius: 4px;
-            background: #374151;
-            outline: none;
-            touch-action: none;
+        /* ── Header ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
         }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #f97316;
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .header-actions button {
+            background: none;
+            border: none;
+            color: #8e8e93;
+            font-size: 20px;
             cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-            transition: transform 0.15s;
+            transition: 0.2s;
         }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            background: #ea580c;
-        }
-        input[type="range"]:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
+        .header-actions button:hover {
+            color: #fff;
         }
 
-        .glass {
-            background: rgba(17, 24, 39, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+        /* ── Canvas Wrapper ── */
+        .canvas-wrapper {
+            background: #0a0a0c;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 340px;
+            position: relative;
+            border: 1px solid #2c2c2e;
+        }
+        .canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 460px;
+            object-fit: contain;
+            background: #0a0a0c;
         }
 
-        .canvas-container {
-            background-image: linear-gradient(45deg, #262626 25%, transparent 25%),
-                linear-gradient(-45deg, #262626 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #262626 75%),
-                linear-gradient(-45deg, transparent 75%, #262626 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-            background-color: #1a1a1a;
+        /* ── Toolbar Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: #2a2a2c;
+            border-radius: 16px;
+            padding: 4px;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+        .tabs button {
+            flex: 1 0 auto;
+            padding: 10px 6px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: #8e8e93;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .tabs button.active {
+            background: #3a3a3c;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .tabs button:hover:not(.active) {
+            color: #ddd;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* ── Tool Panels ── */
+        .panel {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            padding: 8px 4px 4px;
         }
-        .animate-fadeIn {
-            animation: fadeIn 0.25s ease-out;
+        .panel.active {
+            display: flex;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        /* ── Controls ── */
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 16px;
+            background: #252527;
+            padding: 12px 14px;
+            border-radius: 16px;
         }
-        .spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
+        .control-group label {
+            font-size: 13px;
+            color: #aeaeb2;
+            min-width: 70px;
+        }
+        .control-group input[type="range"] {
+            flex: 1;
+            min-width: 100px;
+            accent-color: #f5576c;
+            background: #3a3a3c;
+            height: 4px;
+            border-radius: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            border-top-color: #f97316;
-            animation: spin 0.7s linear infinite;
+            background: #f5576c;
+            cursor: pointer;
+            border: 2px solid #1c1c1e;
+        }
+        .control-group .value {
+            font-size: 14px;
+            min-width: 32px;
+            text-align: right;
+            color: #fff;
+        }
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .btn-row button {
+            background: #3a3a3c;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            flex: 1 0 auto;
+        }
+        .btn-row button:hover {
+            background: #4a4a4c;
+        }
+        .btn-row button.primary {
+            background: #f5576c;
+            color: #fff;
+        }
+        .btn-row button.primary:hover {
+            background: #e04a5f;
         }
 
-        .touch-target {
-            min-height: 44px;
-            min-width: 44px;
+        /* ── Filter grid ── */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 10px;
+        }
+        .filter-item {
+            background: #252527;
+            border-radius: 14px;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
+        .filter-item.active {
+            border-color: #f5576c;
+            background: #2f2f31;
+        }
+        .filter-item:hover {
+            background: #333335;
+        }
+        .filter-item canvas {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 8px;
+            background: #0a0a0c;
+            display: block;
+        }
+        .filter-item span {
+            display: block;
+            margin-top: 4px;
+            font-size: 11px;
+            color: #aeaeb2;
+        }
+
+        /* ── Upload area ── */
+        .upload-area {
+            border: 2px dashed #3a3a3c;
+            border-radius: 20px;
+            padding: 30px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #8e8e93;
+        }
+        .upload-area:hover {
+            border-color: #f5576c;
+            background: #1a1a1c;
+        }
+        .upload-area input {
+            display: none;
+        }
+
+        /* ── Responsive fine-tune ── */
+        @media (max-width: 480px) {
+            .app {
+                border-radius: 20px;
+                padding: 12px;
+            }
+            .tabs button {
+                font-size: 12px;
+                padding: 8px 4px;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen selection:bg-orange-500 selection:text-white">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useRef, useCallback, useEffect, useMemo, useReducer, memo } = React;
+<div class="app" id="app">
+    <!-- Header -->
+    <div class="header">
+        <h1>📸 Photo Editor</h1>
+        <div class="header-actions">
+            <button id="saveBtn" title="Save image">💾</button>
+            <button id="resetBtn" title="Reset edits">↺</button>
+        </div>
+    </div>
 
-        // ---------- Constants ----------
-        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-        const MAX_DIM = 4096;
-        const HISTORY_LIMIT = 50;
+    <!-- Canvas -->
+    <div class="canvas-wrapper">
+        <canvas id="mainCanvas" width="800" height="600"></canvas>
+    </div>
 
-        // ---------- Worker Setup (inline for single-file) ----------
-        const workerBlob = new Blob([`
-            self.onmessage = function(e) {
-                const { imageData, filters } = e.data;
-                const data = imageData.data;
-                const width = imageData.width;
-                const height = imageData.height;
+    <!-- Tabs -->
+    <div class="tabs" id="tabContainer">
+        <button class="active" data-tab="filters">Filters</button>
+        <button data-tab="adjust">Adjust</button>
+        <button data-tab="crop">Crop</button>
+        <button data-tab="text">Text</button>
+        <button data-tab="draw">Draw</button>
+        <button data-tab="collage">Collage</button>
+    </div>
 
-                // --- Pixel adjustments ---
-                const { brightness, contrast, saturation, blurRadius, grayscale, sepia, invert, emboss, sharpen } = filters;
-                const hasPixelAdjustments = brightness !== 0 || contrast !== 0 || saturation !== 0 || grayscale || sepia || invert;
+    <!-- Panels -->
+    <div id="panelContainer">
+        <!-- Filters -->
+        <div class="panel active" id="panel-filters">
+            <div class="filter-grid" id="filterGrid"></div>
+        </div>
 
-                if (hasPixelAdjustments) {
-                    const bVal = (brightness / 100) * 255;
-                    const cFactor = (contrast + 100) / 100;
-                    const sFactor = (saturation + 100) / 100;
+        <!-- Adjust -->
+        <div class="panel" id="panel-adjust">
+            <div class="control-group">
+                <label>Brightness</label>
+                <input type="range" id="brightness" min="-100" max="100" value="0" />
+                <span class="value" id="brightnessVal">0</span>
+            </div>
+            <div class="control-group">
+                <label>Contrast</label>
+                <input type="range" id="contrast" min="-100" max="100" value="0" />
+                <span class="value" id="contrastVal">0</span>
+            </div>
+            <div class="control-group">
+                <label>Saturation</label>
+                <input type="range" id="saturation" min="-100" max="100" value="0" />
+                <span class="value" id="saturationVal">0</span>
+            </div>
+            <div class="control-group">
+                <label>Blur</label>
+                <input type="range" id="blur" min="0" max="20" value="0" step="0.5" />
+                <span class="value" id="blurVal">0</span>
+            </div>
+            <button class="primary" id="applyAdjust" style="padding:12px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer;">Apply Adjustments</button>
+        </div>
 
-                    for (let i = 0; i < data.length; i += 4) {
-                        let r = data[i], g = data[i + 1], b = data[i + 2];
+        <!-- Crop -->
+        <div class="panel" id="panel-crop">
+            <div class="control-group" style="flex-wrap:wrap;">
+                <label>Crop X</label>
+                <input type="range" id="cropX" min="0" max="100" value="0" />
+                <span class="value" id="cropXVal">0</span>
+                <label>Crop Y</label>
+                <input type="range" id="cropY" min="0" max="100" value="0" />
+                <span class="value" id="cropYVal">0</span>
+                <label>Width</label>
+                <input type="range" id="cropW" min="10" max="100" value="100" />
+                <span class="value" id="cropWVal">100</span>
+                <label>Height</label>
+                <input type="range" id="cropH" min="10" max="100" value="100" />
+                <span class="value" id="cropHVal">100</span>
+            </div>
+            <button class="primary" id="applyCrop" style="padding:12px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer;">Apply Crop</button>
+        </div>
 
-                        if (grayscale) {
-                            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                            r = g = b = gray;
-                        }
-                        if (sepia) {
-                            const tr = r, tg = g, tb = b;
-                            r = Math.min(255, 0.393 * tr + 0.769 * tg + 0.189 * tb);
-                            g = Math.min(255, 0.349 * tr + 0.686 * tg + 0.168 * tb);
-                            b = Math.min(255, 0.272 * tr + 0.534 * tg + 0.131 * tb);
-                        }
-                        if (invert) {
-                            r = 255 - r; g = 255 - g; b = 255 - b;
-                        }
-                        if (brightness !== 0) {
-                            r += bVal; g += bVal; b += bVal;
-                        }
-                        if (contrast !== 0) {
-                            r = (r - 128) * cFactor + 128;
-                            g = (g - 128) * cFactor + 128;
-                            b = (b - 128) * cFactor + 128;
-                        }
-                        if (saturation !== 0 && !grayscale) {
-                            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-                            r = luma + (r - luma) * sFactor;
-                            g = luma + (g - luma) * sFactor;
-                            b = luma + (b - luma) * sFactor;
-                        }
+        <!-- Text -->
+        <div class="panel" id="panel-text">
+            <div class="control-group" style="flex-wrap:wrap;">
+                <input type="text" id="textInput" placeholder="Your text here..." style="flex:1;padding:10px 14px;border-radius:12px;border:1px solid #3a3a3c;background:#1c1c1e;color:#fff;font-size:14px;min-width:140px;" />
+            </div>
+            <div class="control-group" style="flex-wrap:wrap;">
+                <label>Size</label>
+                <input type="range" id="textSize" min="12" max="120" value="40" />
+                <span class="value" id="textSizeVal">40</span>
+                <label>Color</label>
+                <input type="color" id="textColor" value="#ffffff" style="width:40px;height:40px;background:none;border:none;cursor:pointer;" />
+            </div>
+            <button class="primary" id="addTextBtn" style="padding:12px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer;">Add Text</button>
+        </div>
 
-                        data[i]     = Math.min(255, Math.max(0, r));
-                        data[i + 1] = Math.min(255, Math.max(0, g));
-                        data[i + 2] = Math.min(255, Math.max(0, b));
-                    }
-                }
+        <!-- Draw -->
+        <div class="panel" id="panel-draw">
+            <div class="control-group" style="flex-wrap:wrap;">
+                <label>Color</label>
+                <input type="color" id="drawColor" value="#f5576c" style="width:40px;height:40px;background:none;border:none;cursor:pointer;" />
+                <label>Size</label>
+                <input type="range" id="drawSize" min="1" max="30" value="6" />
+                <span class="value" id="drawSizeVal">6</span>
+            </div>
+            <div class="btn-row">
+                <button id="drawToggle" class="primary">✏️ Draw</button>
+                <button id="clearDraw">🗑️ Clear</button>
+            </div>
+        </div>
 
-                // --- Convolution filters ---
-                if (blurRadius > 0 || emboss || sharpen) {
-                    const originalData = new Uint8ClampedArray(data);
-                    let kernel = [];
+        <!-- Collage -->
+        <div class="panel" id="panel-collage">
+            <div class="upload-area" id="collageUpload">
+                <p>📁 Upload up to 4 images<br/><span style="font-size:12px;color:#6a6a6e;">Click to add photos</span></p>
+                <input type="file" id="collageInput" accept="image/*" multiple />
+            </div>
+            <div class="btn-row">
+                <button id="makeCollage" class="primary">🖼️ Create Collage</button>
+                <button id="clearCollage">Clear All</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;" id="collagePreview"></div>
+        </div>
+    </div>
+</div>
 
-                    if (emboss) {
-                        kernel = [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]];
-                    } else if (sharpen) {
-                        kernel = [[0, -1, 0], [-1, 5, -1], [0, -1, 0]];
-                    } else if (blurRadius > 0) {
-                        const size = Math.min(Math.round(blurRadius / 2) * 2 + 1, 9);
-                        const cell = 1 / (size * size);
-                        kernel = Array.from({ length: size }, () => Array(size).fill(cell));
-                    }
+<script>
+    (function() {
+        'use strict';
 
-                    if (kernel.length > 0) {
-                        const kSize = kernel.length;
-                        const half = Math.floor(kSize / 2);
-                        for (let y = 0; y < height; y++) {
-                            for (let x = 0; x < width; x++) {
-                                let rSum = 0, gSum = 0, bSum = 0;
-                                for (let ky = 0; ky < kSize; ky++) {
-                                    for (let kx = 0; kx < kSize; kx++) {
-                                        const px = Math.min(width - 1, Math.max(0, x + kx - half));
-                                        const py = Math.min(height - 1, Math.max(0, y + ky - half));
-                                        const idx = (py * width + px) * 4;
-                                        const w = kernel[ky][kx];
-                                        rSum += originalData[idx] * w;
-                                        gSum += originalData[idx + 1] * w;
-                                        bSum += originalData[idx + 2] * w;
-                                    }
-                                }
-                                const dIdx = (y * width + x) * 4;
-                                data[dIdx]     = Math.min(255, Math.max(0, rSum));
-                                data[dIdx + 1] = Math.min(255, Math.max(0, gSum));
-                                data[dIdx + 2] = Math.min(255, Math.max(0, bSum));
-                            }
-                        }
-                    }
-                }
-
-                self.postMessage({ imageData }, [imageData.data.buffer]);
-            };
-        `], { type: 'application/javascript' });
-        const workerUrl = URL.createObjectURL(workerBlob);
-
-        // ---------- Helper: filter reducer ----------
-        const defaultFilters = {
-            brightness: 0,
-            contrast: 0,
-            saturation: 0,
-            blurRadius: 0,
-            grayscale: false,
-            sepia: false,
-            invert: false,
-            emboss: false,
-            sharpen: false,
-            rotation: 0,
-            flipH: false,
-            flipV: false
+        // ─── DOM refs ──────────────────────────────────────────────
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const tabBtns = document.querySelectorAll('.tabs button');
+        const panels = {
+            filters: document.getElementById('panel-filters'),
+            adjust: document.getElementById('panel-adjust'),
+            crop: document.getElementById('panel-crop'),
+            text: document.getElementById('panel-text'),
+            draw: document.getElementById('panel-draw'),
+            collage: document.getElementById('panel-collage')
         };
 
-        function filterReducer(state, action) {
-            switch (action.type) {
-                case 'SET':
-                    return { ...state, ...action.payload };
-                case 'TOGGLE':
-                    return { ...state, [action.key]: !state[action.key] };
-                case 'RESET':
-                    return { ...defaultFilters };
-                default:
-                    return state;
+        // ─── State ──────────────────────────────────────────────────
+        let originalImage = null;        // ImageData of the original loaded image (full size)
+        let currentImageData = null;     // ImageData currently displayed (after adjustments)
+        let imageLoaded = false;
+        let editHistory = [];            // simple undo stack (stores ImageData)
+        let isDrawing = false;
+        let drawMode = false;
+
+        // Filters list
+        const filterNames = ['None', 'Grayscale', 'Sepia', 'Invert', 'Brightness+', 'Contrast+', 'Vintage', 'Cool', 'Warm', 'Blur'];
+        const filterFunctions = {
+            'None': (data) => data,
+            'Grayscale': (data) => { for (let i=0; i<data.length; i+=4) { const g=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]; data[i]=data[i+1]=data[i+2]=g; } return data; },
+            'Sepia': (data) => { for (let i=0; i<data.length; i+=4) { let r=data[i], g=data[i+1], b=data[i+2]; data[i]=Math.min(255, r*0.393+g*0.769+b*0.189); data[i+1]=Math.min(255, r*0.349+g*0.686+b*0.168); data[i+2]=Math.min(255, r*0.272+g*0.534+b*0.131); } return data; },
+            'Invert': (data) => { for (let i=0; i<data.length; i+=4) { data[i]=255-data[i]; data[i+1]=255-data[i+1]; data[i+2]=255-data[i+2]; } return data; },
+            'Brightness+': (data) => { for (let i=0; i<data.length; i+=4) { data[i]=Math.min(255, data[i]+40); data[i+1]=Math.min(255, data[i+1]+40); data[i+2]=Math.min(255, data[i+2]+40); } return data; },
+            'Contrast+': (data) => { const factor=1.3; for (let i=0; i<data.length; i+=4) { data[i]=Math.min(255, Math.max(0, ((data[i]/255-0.5)*factor+0.5)*255)); data[i+1]=Math.min(255, Math.max(0, ((data[i+1]/255-0.5)*factor+0.5)*255)); data[i+2]=Math.min(255, Math.max(0, ((data[i+2]/255-0.5)*factor+0.5)*255)); } return data; },
+            'Vintage': (data) => { for (let i=0; i<data.length; i+=4) { data[i]=Math.min(255, data[i]*1.1); data[i+1]=Math.min(255, data[i+1]*0.9); data[i+2]=Math.min(255, data[i+2]*0.8); } return data; },
+            'Cool': (data) => { for (let i=0; i<data.length; i+=4) { data[i]=Math.min(255, data[i]*0.8); data[i+1]=Math.min(255, data[i+1]*0.9); data[i+2]=Math.min(255, data[i+2]*1.2); } return data; },
+            'Warm': (data) => { for (let i=0; i<data.length; i+=4) { data[i]=Math.min(255, data[i]*1.2); data[i+1]=Math.min(255, data[i+1]*1.0); data[i+2]=Math.min(255, data[i+2]*0.8); } return data; },
+            'Blur': (data) => { // simple box blur 3x3 – for demonstration; we'll implement a simple blur
+                // For performance, we'll use a basic blur kernel (3x3)
+                const w = canvas.width, h = canvas.height;
+                const src = new Uint8ClampedArray(data);
+                const dst = new Uint8ClampedArray(data);
+                const size = 3;
+                const half = Math.floor(size/2);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let r=0,g=0,b=0,a=0, count=0;
+                        for (let dy=-half; dy<=half; dy++) {
+                            for (let dx=-half; dx<=half; dx++) {
+                                const nx = Math.min(w-1, Math.max(0, x+dx));
+                                const ny = Math.min(h-1, Math.max(0, y+dy));
+                                const idx = (ny*w + nx)*4;
+                                r += src[idx];
+                                g += src[idx+1];
+                                b += src[idx+2];
+                                a += src[idx+3];
+                                count++;
+                            }
+                        }
+                        const idx = (y*w + x)*4;
+                        dst[idx] = r/count;
+                        dst[idx+1] = g/count;
+                        dst[idx+2] = b/count;
+                        dst[idx+3] = a/count;
+                    }
+                }
+                for (let i=0; i<data.length; i++) data[i] = dst[i];
+                return data;
             }
+        };
+
+        // ─── Helpers ──────────────────────────────────────────────
+        function loadImageFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Set canvas size to image dimensions
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    originalImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    currentImageData = new Uint8ClampedArray(originalImage.data);
+                    imageLoaded = true;
+                    editHistory = [];
+                    render();
+                    populateFilterThumbnails();
+                    // reset adjust sliders
+                    document.getElementById('brightness').value = 0;
+                    document.getElementById('brightnessVal').textContent = '0';
+                    document.getElementById('contrast').value = 0;
+                    document.getElementById('contrastVal').textContent = '0';
+                    document.getElementById('saturation').value = 0;
+                    document.getElementById('saturationVal').textContent = '0';
+                    document.getElementById('blur').value = 0;
+                    document.getElementById('blurVal').textContent = '0';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
-        // ---------- Memoized Control Components ----------
-        const FilterButton = memo(({ label, icon, active, onClick, ariaLabel }) => (
-            <button
-                onClick={onClick}
-                aria-label={ariaLabel || label}
-                className={`touch-target p-3 rounded-xl border text-left text-xs font-medium transition-all flex flex-col justify-between gap-3 h-20 ${active ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"
-                    }`}
-            >
-                <span className="text-base">{icon}</span>
-                <span>{label}</span>
-            </button>
-        ));
+        function render() {
+            if (!imageLoaded) return;
+            const imageData = new ImageData(new Uint8ClampedArray(currentImageData), canvas.width, canvas.height);
+            ctx.putImageData(imageData, 0, 0);
+        }
 
-        const SliderInput = memo(({ label, value, min, max, unit, disabled, onChange, onCommit, ariaLabel }) => (
-            <div className="space-y-2 bg-gray-950 p-3 rounded-xl border border-gray-800">
-                <div className="flex justify-between text-xs font-semibold text-gray-400">
-                    <span id={`slider-label-${label}`}>{label}</span>
-                    <span className="text-orange-400 font-mono">{value > 0 ? `+${value}` : value}{unit}</span>
-                </div>
-                <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    value={value}
-                    disabled={disabled}
-                    onChange={(e) => onChange(Number(e.target.value))}
-                    onMouseUp={onCommit}
-                    onTouchEnd={onCommit}
-                    className="w-full accent-orange-500"
-                    aria-labelledby={`slider-label-${label}`}
-                    aria-valuenow={value}
-                    aria-valuemin={min}
-                    aria-valuemax={max}
-                />
-                {disabled && (
-                    <p className="text-[10px] text-gray-500 italic">Disabled when Emboss or Sharpen is active</p>
-                )}
-            </div>
-        ));
+        function applyFilter(name) {
+            if (!imageLoaded) return;
+            const data = new Uint8ClampedArray(currentImageData);
+            const filtered = filterFunctions[name] ? filterFunctions[name](data) : data;
+            currentImageData = new Uint8ClampedArray(filtered);
+            render();
+        }
 
-        // ---------- Main Component ----------
-        function LuminorStudioPro() {
-            // ----- Refs -----
-            const canvasRef = useRef(null);
-            const fileInputRef = useRef(null);
-            const workerRef = useRef(null);
-            const historyIndexRef = useRef(-1);
-            const renderFrameId = useRef(null);
-            const renderPendingRef = useRef(false);
-            const dragStartIndexRef = useRef(-1);
-            const isProcessingRef = useRef(false);
-            const abortControllerRef = useRef(null);
-
-            // ----- State -----
-            const [image, setImage] = useState(null);
-            const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-            const [history, setHistory] = useState([]);
-            const [historyIndex, setHistoryIndex] = useState(-1);
-            const [warning, setWarning] = useState(null);
-            const [isLoading, setIsLoading] = useState(false);
-            const [isProcessing, setIsProcessing] = useState(false);
-
-            const [filters, dispatchFilters] = useReducer(filterReducer, defaultFilters);
-            const [activeTab, setActiveTab] = useState("filters");
-            const [exportFormat, setExportFormat] = useState("png");
-
-            // Keep refs in sync
-            useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
-
-            // ----- Worker setup -----
-            useEffect(() => {
-                let worker = null;
-                try {
-                    worker = new Worker(workerUrl);
-                    worker.onmessage = (e) => {
-                        const processed = e.data.imageData;
-                        const canvas = canvasRef.current;
-                        if (canvas) {
-                            const ctx = canvas.getContext('2d');
-                            ctx.putImageData(processed, 0, 0);
-                        }
-                        setIsProcessing(false);
-                        isProcessingRef.current = false;
-                    };
-                    worker.onerror = (err) => {
-                        setWarning('Worker error: ' + err.message);
-                        setIsProcessing(false);
-                        isProcessingRef.current = false;
-                    };
-                    workerRef.current = worker;
-                } catch (err) {
-                    setWarning('Web Worker not supported, falling back to main-thread processing.');
-                    workerRef.current = null;
+        // ─── Filter thumbnails ────────────────────────────────────
+        function populateFilterThumbnails() {
+            const grid = document.getElementById('filterGrid');
+            grid.innerHTML = '';
+            if (!imageLoaded) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#8e8e93;padding:20px;">Upload an image first</div>';
+                return;
+            }
+            // Use a small canvas for thumbnails
+            const thumbSize = 80;
+            filterNames.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'filter-item';
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = thumbSize;
+                thumbCanvas.height = thumbSize;
+                const tCtx = thumbCanvas.getContext('2d');
+                // Draw scaled down original
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tCtx2 = tempCanvas.getContext('2d');
+                tCtx2.putImageData(new ImageData(new Uint8ClampedArray(originalImage.data), canvas.width, canvas.height), 0, 0);
+                // Apply filter if not None
+                if (name !== 'None') {
+                    const imgData = tCtx2.getImageData(0,0,tempCanvas.width,tempCanvas.height);
+                    const filtered = filterFunctions[name] ? filterFunctions[name](new Uint8ClampedArray(imgData.data)) : imgData.data;
+                    tCtx2.putImageData(new ImageData(new Uint8ClampedArray(filtered), tempCanvas.width, tempCanvas.height), 0, 0);
                 }
-                return () => {
-                    if (workerRef.current) {
-                        try { workerRef.current.terminate(); } catch (_) {}
-                    }
-                };
-            }, []);
-
-            // ----- Core pipeline -----
-            const executePipelineRender = useCallback((targetFilters) => {
-                const canvas = canvasRef.current;
-                if (!canvas || !image) return;
-                const ctx = canvas.getContext('2d');
-
-                const is90or270 = targetFilters.rotation === 90 || targetFilters.rotation === 270;
-                const targetW = is90or270 ? image.height : image.width;
-                const targetH = is90or270 ? image.width : image.height;
-
-                canvas.width = targetW;
-                canvas.height = targetH;
-                ctx.save();
-                ctx.clearRect(0, 0, targetW, targetH);
-                ctx.translate(targetW / 2, targetH / 2);
-                ctx.rotate((targetFilters.rotation * Math.PI) / 180);
-                ctx.scale(targetFilters.flipH ? -1 : 1, targetFilters.flipV ? -1 : 1);
-                ctx.drawImage(image, -image.width / 2, -image.height / 2);
-                ctx.restore();
-
-                const baseImageData = ctx.getImageData(0, 0, targetW, targetH);
-
-                // If worker available, use it
-                if (workerRef.current) {
-                    if (abortControllerRef.current) {
-                        try { abortControllerRef.current.abort(); } catch (_) {}
-                    }
-                    abortControllerRef.current = new AbortController();
-                    setIsProcessing(true);
-                    isProcessingRef.current = true;
-                    try {
-                        workerRef.current.postMessage({
-                            imageData: baseImageData,
-                            filters: targetFilters
-                        }, [baseImageData.data.buffer]);
-                    } catch (err) {
-                        // Fallback to main-thread
-                        setIsProcessing(false);
-                        isProcessingRef.current = false;
-                        const processed = processPixelsMainThread(baseImageData, targetFilters);
-                        ctx.putImageData(processed, 0, 0);
-                    }
-                    return;
-                }
-
-                // Fallback: main-thread processing
-                const processed = processPixelsMainThread(baseImageData, targetFilters);
-                ctx.putImageData(processed, 0, 0);
-            }, [image]);
-
-            // ----- Main-thread fallback -----
-            const processPixelsMainThread = useCallback((imgData, currentFilters) => {
-                const { brightness, contrast, saturation, blurRadius, grayscale, sepia, invert, emboss, sharpen } =
-                currentFilters;
-                const data = imgData.data;
-                const width = imgData.width;
-                const height = imgData.height;
-                const hasPixelAdjustments = brightness !== 0 || contrast !== 0 || saturation !== 0 || grayscale || sepia ||
-                    invert;
-
-                if (hasPixelAdjustments) {
-                    const bVal = (brightness / 100) * 255;
-                    const cFactor = (contrast + 100) / 100;
-                    const sFactor = (saturation + 100) / 100;
-
-                    for (let i = 0; i < data.length; i += 4) {
-                        let r = data[i],
-                            g = data[i + 1],
-                            b = data[i + 2];
-
-                        if (grayscale) {
-                            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                            r = g = b = gray;
-                        }
-                        if (sepia) {
-                            const tr = r,
-                                tg = g,
-                                tb = b;
-                            r = Math.min(255, 0.393 * tr + 0.769 * tg + 0.189 * tb);
-                            g = Math.min(255, 0.349 * tr + 0.686 * tg + 0.168 * tb);
-                            b = Math.min(255, 0.272 * tr + 0.534 * tg + 0.131 * tb);
-                        }
-                        if (invert) {
-                            r = 255 - r;
-                            g = 255 - g;
-                            b = 255 - b;
-                        }
-                        if (brightness !== 0) {
-                            r += bVal;
-                            g += bVal;
-                            b += bVal;
-                        }
-                        if (contrast !== 0) {
-                            r = (r - 128) * cFactor + 128;
-                            g = (g - 128) * cFactor + 128;
-                            b = (b - 128) * cFactor + 128;
-                        }
-                        if (saturation !== 0 && !grayscale) {
-                            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-                            r = luma + (r - luma) * sFactor;
-                            g = luma + (g - luma) * sFactor;
-                            b = luma + (b - luma) * sFactor;
-                        }
-
-                        data[i] = Math.min(255, Math.max(0, r));
-                        data[i + 1] = Math.min(255, Math.max(0, g));
-                        data[i + 2] = Math.min(255, Math.max(0, b));
-                    }
-                }
-
-                // Convolution
-                if (blurRadius > 0 || emboss || sharpen) {
-                    const originalData = new Uint8ClampedArray(data);
-                    let kernel = [];
-
-                    if (emboss) {
-                        kernel = [
-                            [-2, -1, 0],
-                            [-1, 1, 1],
-                            [0, 1, 2]
-                        ];
-                    } else if (sharpen) {
-                        kernel = [
-                            [0, -1, 0],
-                            [-1, 5, -1],
-                            [0, -1, 0]
-                        ];
-                    } else if (blurRadius > 0) {
-                        const size = Math.min(Math.round(blurRadius / 2) * 2 + 1, 9);
-                        const cell = 1 / (size * size);
-                        kernel = Array.from({ length: size }, () => Array(size).fill(cell));
-                    }
-
-                    if (kernel.length > 0) {
-                        const kSize = kernel.length;
-                        const half = Math.floor(kSize / 2);
-                        for (let y = 0; y < height; y++) {
-                            for (let x = 0; x < width; x++) {
-                                let rSum = 0,
-                                    gSum = 0,
-                                    bSum = 0;
-                                for (let ky = 0; ky < kSize; ky++) {
-                                    for (let kx = 0; kx < kSize; kx++) {
-                                        const px = Math.min(width - 1, Math.max(0, x + kx - half));
-                                        const py = Math.min(height - 1, Math.max(0, y + ky - half));
-                                        const idx = (py * width + px) * 4;
-                                        const w = kernel[ky][kx];
-                                        rSum += originalData[idx] * w;
-                                        gSum += originalData[idx + 1] * w;
-                                        bSum += originalData[idx + 2] * w;
-                                    }
-                                }
-                                const dIdx = (y * width + x) * 4;
-                                data[dIdx] = Math.min(255, Math.max(0, rSum));
-                                data[dIdx + 1] = Math.min(255, Math.max(0, gSum));
-                                data[dIdx + 2] = Math.min(255, Math.max(0, bSum));
-                            }
-                        }
-                    }
-                }
-                return imgData;
-            }, []);
-
-            // ----- Schedule render (rAF coalescing) -----
-            const scheduleRender = useCallback(() => {
-                if (renderPendingRef.current) return;
-                renderPendingRef.current = true;
-                renderFrameId.current = requestAnimationFrame(() => {
-                    renderPendingRef.current = false;
-                    if (!isProcessingRef.current) {
-                        executePipelineRender(filters);
-                    } else {
-                        // If processing, re-schedule after a short delay
-                        renderPendingRef.current = true;
-                        setTimeout(() => {
-                            renderPendingRef.current = false;
-                            scheduleRender();
-                        }, 50);
-                    }
+                tCtx.drawImage(tempCanvas, 0, 0, thumbSize, thumbSize);
+                div.appendChild(thumbCanvas);
+                const span = document.createElement('span');
+                span.textContent = name;
+                div.appendChild(span);
+                div.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
+                    div.classList.add('active');
+                    applyFilter(name);
                 });
-            }, [executePipelineRender, filters]);
+                grid.appendChild(div);
+            });
+        }
 
-            useEffect(() => {
-                return () => {
-                    if (renderFrameId.current) cancelAnimationFrame(renderFrameId.current);
-                };
-            }, []);
-
-            useEffect(() => {
-                if (image) scheduleRender();
-            }, [image, scheduleRender]);
-
-            // ----- History -----
-            const commitToHistory = useCallback((updatedFilters) => {
-                const idx = historyIndexRef.current;
-                setHistory(prev => {
-                    const sliced = prev.slice(0, idx + 1);
-                    const fresh = [...sliced, updatedFilters];
-                    if (fresh.length > HISTORY_LIMIT) fresh.shift();
-                    return fresh;
-                });
-                setHistoryIndex(prev => Math.min(prev + 1, HISTORY_LIMIT - 1));
-            }, []);
-
-            // ----- Travel history (undo/redo) -----
-            const travelHistory = useCallback((targetIndex) => {
-                if (targetIndex < 0 || targetIndex >= history.length) return;
-                const timePointFilters = history[targetIndex];
-                dispatchFilters({ type: 'SET', payload: timePointFilters });
-                setHistoryIndex(targetIndex);
-                scheduleRender();
-            }, [history, scheduleRender]);
-
-            const undo = useCallback(() => {
-                if (historyIndex > 0 && !isProcessingRef.current) {
-                    travelHistory(historyIndex - 1);
+        // ─── Adjustments ──────────────────────────────────────────
+        function applyAdjustments(brightness, contrast, saturation, blur) {
+            if (!imageLoaded) return;
+            let data = new Uint8ClampedArray(originalImage.data);
+            // brightness
+            if (brightness !== 0) {
+                const b = brightness * 2.55;
+                for (let i=0; i<data.length; i+=4) {
+                    data[i] = Math.min(255, Math.max(0, data[i] + b));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + b));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + b));
                 }
-            }, [historyIndex, travelHistory]);
-
-            const redo = useCallback(() => {
-                if (historyIndex < history.length - 1 && !isProcessingRef.current) {
-                    travelHistory(historyIndex + 1);
+            }
+            // contrast
+            if (contrast !== 0) {
+                const factor = 1 + contrast/100;
+                for (let i=0; i<data.length; i+=4) {
+                    data[i] = Math.min(255, Math.max(0, ((data[i]/255 - 0.5) * factor + 0.5) * 255));
+                    data[i+1] = Math.min(255, Math.max(0, ((data[i+1]/255 - 0.5) * factor + 0.5) * 255));
+                    data[i+2] = Math.min(255, Math.max(0, ((data[i+2]/255 - 0.5) * factor + 0.5) * 255));
                 }
-            }, [historyIndex, history.length, travelHistory]);
-
-            // ----- Handlers -----
-            const handleFilterToggle = (key) => {
-                if (isProcessingRef.current) return;
-                dispatchFilters({ type: 'TOGGLE', key });
-                const newState = { ...filters, [key]: !filters[key] };
-                commitToHistory(newState);
-            };
-
-            const handleSliderChange = (key, val) => {
-                if (dragStartIndexRef.current === -1) {
-                    dragStartIndexRef.current = historyIndexRef.current;
+            }
+            // saturation
+            if (saturation !== 0) {
+                const sat = 1 + saturation/100;
+                for (let i=0; i<data.length; i+=4) {
+                    const gray = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+                    data[i] = Math.min(255, Math.max(0, gray + sat*(data[i]-gray)));
+                    data[i+1] = Math.min(255, Math.max(0, gray + sat*(data[i+1]-gray)));
+                    data[i+2] = Math.min(255, Math.max(0, gray + sat*(data[i+2]-gray)));
                 }
-                dispatchFilters({ type: 'SET', payload: { [key]: val } });
-                scheduleRender();
-            };
-
-            const handleSliderCommit = () => {
-                if (dragStartIndexRef.current !== -1) {
-                    if (dragStartIndexRef.current === historyIndexRef.current) {
-                        commitToHistory(filters);
-                    } else {
-                        // History changed during drag – reset to current history state
-                        const currentState = history[historyIndexRef.current];
-                        if (currentState) {
-                            dispatchFilters({ type: 'SET', payload: currentState });
-                        }
-                    }
-                    dragStartIndexRef.current = -1;
-                }
-            };
-
-            const handleGeometryTransform = (type) => {
-                if (isProcessingRef.current) return;
-                let next = { ...filters };
-                if (type === "rotateLeft") next.rotation = (filters.rotation - 90 + 360) % 360;
-                if (type === "rotateRight") next.rotation = (filters.rotation + 90) % 360;
-                if (type === "flipH") next.flipH = !filters.flipH;
-                if (type === "flipV") next.flipV = !filters.flipV;
-                if (type === "clearGeometry") {
-                    next.rotation = 0;
-                    next.flipH = false;
-                    next.flipV = false;
-                }
-                dispatchFilters({ type: 'SET', payload: next });
-                commitToHistory(next);
-            };
-
-            const resetAllSettings = () => {
-                if (isProcessingRef.current) return;
-                dispatchFilters({ type: 'RESET' });
-                commitToHistory(defaultFilters);
-            };
-
-            // ----- Image loading with createImageBitmap -----
-            const processFileInward = useCallback(async (file) => {
-                if (!file) return;
-                setWarning(null);
-                setIsLoading(true);
-
-                if (file.size > MAX_FILE_SIZE) {
-                    setWarning("File too large. Maximum size is 50 MB.");
-                    setIsLoading(false);
-                    return;
-                }
-
-                const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/bmp', 'image/tiff'];
-                if (!validTypes.includes(file.type) && !file.type.startsWith('image/')) {
-                    setWarning("Unsupported file type. Please use PNG, JPEG, WebP, BMP, or TIFF.");
-                    setIsLoading(false);
-                    return;
-                }
-
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    let imageBitmap = null;
-                    let imgWidth = 0,
-                        imgHeight = 0;
-
-                    // Try createImageBitmap with resize
-                    try {
-                        // First, get dimensions without decoding full image
-                        const blob = new Blob([arrayBuffer], { type: file.type });
-                        const tempBitmap = await createImageBitmap(blob);
-                        imgWidth = tempBitmap.width;
-                        imgHeight = tempBitmap.height;
-                        tempBitmap.close();
-
-                        const needsResize = imgWidth > MAX_DIM || imgHeight > MAX_DIM;
-                        const resizeOpts = needsResize ? {
-                            resizeWidth: Math.min(MAX_DIM, imgWidth),
-                            resizeHeight: Math.min(MAX_DIM, imgHeight),
-                            resizeQuality: 'medium'
-                        } : {};
-
-                        imageBitmap = await createImageBitmap(blob, resizeOpts);
-
-                        if (needsResize) {
-                            setWarning(`Image downscaled from ${imgWidth}×${imgHeight} to ${imageBitmap.width}×${imageBitmap.height} for performance.`);
-                        }
-                    } catch (err) {
-                        // Fallback: use Image element
-                        const url = URL.createObjectURL(new Blob([arrayBuffer], { type: file.type }));
-                        const img = new Image();
-                        await new Promise((resolve, reject) => {
-                            img.onload = resolve;
-                            img.onerror = reject;
-                            img.src = url;
-                        });
-                        imgWidth = img.width;
-                        imgHeight = img.height;
-                        const needsResize = imgWidth > MAX_DIM || imgHeight > MAX_DIM;
-                        if (needsResize) {
-                            const ratio = Math.min(MAX_DIM / imgWidth, MAX_DIM / imgHeight);
-                            const newW = Math.round(imgWidth * ratio);
-                            const newH = Math.round(imgHeight * ratio);
-                            const offCanvas = document.createElement('canvas');
-                            offCanvas.width = newW;
-                            offCanvas.height = newH;
-                            const offCtx = offCanvas.getContext('2d');
-                            offCtx.drawImage(img, 0, 0, newW, newH);
-                            imageBitmap = await createImageBitmap(offCanvas);
-                            setWarning(`Image downscaled from ${imgWidth}×${imgHeight} to ${newW}×${newH} for performance.`);
-                        } else {
-                            imageBitmap = await createImageBitmap(img);
-                        }
-                        URL.revokeObjectURL(url);
-                    }
-
-                    if (!imageBitmap) throw new Error('Failed to load image');
-
-                    setImage(imageBitmap);
-                    setDimensions({ width: imageBitmap.width, height: imageBitmap.height });
-                    initializeEditor(imageBitmap);
-
-                } catch (err) {
-                    setWarning('Failed to load image: ' + (err.message || 'unknown error'));
-                } finally {
-                    setIsLoading(false);
-                }
-            }, []);
-
-            const initializeEditor = (img) => {
-                dispatchFilters({ type: 'RESET' });
-                setHistory([defaultFilters]);
-                setHistoryIndex(0);
-                dragStartIndexRef.current = -1;
-            };
-
-            const handleImageUpload = (e) => {
-                setWarning(null);
-                const file = e.target.files?.[0];
-                if (file) processFileInward(file);
-                e.target.value = '';
-            };
-
-            // ----- Export -----
-            const exportAssetOutward = useCallback(() => {
-                const canvas = canvasRef.current;
-                if (!canvas || isProcessingRef.current) return;
-                try {
-                    const mime = exportFormat === "png" ? "image/png" : "image/jpeg";
-                    const quality = exportFormat === "jpeg" ? 0.92 : 1.0;
-                    const link = document.createElement("a");
-                    link.download = `luminor-studio-export.${exportFormat}`;
-                    link.href = canvas.toDataURL(mime, quality);
-                    link.click();
-                } catch (err) {
-                    setWarning("Export failed. Canvas may be tainted or too large.");
-                }
-            }, [exportFormat]);
-
-            // ----- Keyboard shortcuts -----
-            useEffect(() => {
-                const handler = (e) => {
-                    const mod = e.ctrlKey || e.metaKey;
-                    if (mod && e.key.toLowerCase() === 'z') {
-                        e.preventDefault();
-                        e.shiftKey ? redo() : undo();
-                    }
-                    if (mod && e.key.toLowerCase() === 'y') {
-                        e.preventDefault();
-                        redo();
-                    }
-                    if (mod && e.key.toLowerCase() === 's') {
-                        e.preventDefault();
-                        exportAssetOutward();
-                    }
-                };
-                window.addEventListener('keydown', handler);
-                return () => window.removeEventListener('keydown', handler);
-            }, [undo, redo, exportAssetOutward]);
-
-            // Auto-dismiss warning after 5s
-            useEffect(() => {
-                if (warning) {
-                    const timer = setTimeout(() => setWarning(null), 5000);
-                    return () => clearTimeout(timer);
-                }
-            }, [warning]);
-
-            // ----- UI -----
-            const isBlurDisabled = filters.emboss || filters.sharpen;
-
-            return ( <
-                    div className = "min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8" >
-                    <
-                    div className = "glass w-full max-w-6xl rounded-3xl shadow-2xl border border-gray-800 flex flex-col overflow-hidden max-h-[94vh]" >
-                    { /* Warning banner */ } {
-                        warning && ( <
-                            div className = "px-6 py-2 bg-yellow-900/60 border-b border-yellow-700/50 text-yellow-200 text-xs flex justify-between items-center" >
-                            <
-                            span > ⚠️ { warning } < /span> <
-                            button onClick = {
-                                () => setWarning(null) }
-                            className = "text-yellow-300 ml-4 font-bold touch-target flex items-center justify-center" >
-                            ✕ < /button> <
-                            /div>
-                        )
-                    }
-
-                    { /* Header */ } <
-                    div className = "px-6 py-4 border-b border-gray-800 bg-gray-900/60 flex flex-wrap items-center justify-between gap-4" >
-                    <
-                    div className = "flex items-center gap-3" >
-                    <
-                    span className = "text-2xl" > 📸 < /span> <
-                    h1 className = "text-xl font-bold bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 bg-clip-text text-transparent tracking-tight" >
-                    Luminor Studio Pro <
-                    /h1> <
-                    /div> <
-                    div className = "flex items-center flex-wrap gap-2" >
-                    <
-                    button onClick = {
-                        () => fileInputRef.current?.click() }
-                    className = "touch-target px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-orange-900/20"
-                    aria-label = "Upload image" >
-                    <
-                    span > 📤 < /span> Upload <
-                    /button> <
-                    input ref = { fileInputRef }
-                    type = "file"
-                    accept = "image/png,image/jpeg,image/webp,image/bmp,image/tiff"
-                    onChange = { handleImageUpload }
-                    className = "hidden"
-                    aria-label = "File input" / >
-                    <
-                    div className = "h-6 w-[1px] bg-gray-800 mx-1" > < /div> <
-                    button onClick = { undo }
-                    disabled = { historyIndex <= 0 || !image || isProcessing }
-                    className = "touch-target p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition"
-                    title = "Undo (Ctrl+Z)"
-                    aria-label = "Undo" >
-                    ↩️ <
-                    /button> <
-                    button onClick = { redo }
-                    disabled = { historyIndex >= history.length - 1 || !image || isProcessing }
-                    className = "touch-target p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition"
-                    title = "Redo (Ctrl+Y)"
-                    aria-label = "Redo" >
-                    ↪️ <
-                    /button> <
-                    button onClick = { resetAllSettings }
-                    disabled = { !image || isProcessing }
-                    className = "touch-target px-3 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition" >
-                    Reset <
-                    /button> <
-                    /div> <
-                    /div>
-
-                    { /* Main split */ } <
-                    div className = "flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden" >
-                    { /* Canvas area */ } <
-                    div className = "lg:col-span-8 p-6 flex flex-col items-center justify-center bg-gray-950/50 relative overflow-hidden min-h-[320px]" >
-                    { !image ? ( <
-                            div className = "text-center max-w-sm px-4" >
-                            <
-                            div className = "w-16 h-16 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 text-gray-400 shadow-inner" >
-                            🖼️ <
-                            /div> <
-                            h3 className = "text-base font-semibold text-gray-200" > No media asset active < /h3> <
-                            p className = "text-gray-500 text-xs mt-1 mb-4 leading-relaxed" >
-                            Import an image to unlock high‑fidelity filtering and adjustment engines. <
-                            /p> <
-                            button onClick = {
-                                () => fileInputRef.current?.click() }
-                            className = "touch-target px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-orange-400 rounded-xl text-xs font-semibold transition" >
-                            Browse Workspace Files <
-                            /button> <
-                            /div>
-                        ) : ( <
-                            div className = "canvas-container p-1 rounded-2xl shadow-2xl border border-gray-800 max-w-full max-h-[50vh] lg:max-h-[60vh] overflow-auto flex items-center justify-center relative" >
-                            <
-                            canvas ref = { canvasRef }
-                            className = "max-w-full max-h-[48vh] lg:max-h-[58vh] object-contain rounded-xl" / >
-                            {
-                                isProcessing && ( <
-                                    div className = "absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl" >
-                                    <
-                                    div className = "spinner" > < /div> <
-                                    span className = "ml-3 text-sm text-white font-medium" > Processing… < /span> <
-                                    /div>
-                                )
-                            } {
-                                isLoading && ( <
-                                    div className = "absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl" >
-                                    <
-                                    div className = "spinner" > < /div> <
-                                    span className = "ml-3 text-sm text-white font-medium" > Loading… < /span> <
-                                    /div>
-                                )
-                            } <
-                            /div>
-                        )
-                    } <
-                    /div>
-
-                    { /* Controls */ } <
-                    div className = "lg:col-span-4 border-t lg:border-t-0 lg:border-l border-gray-800 bg-gray-900/30 p-6 flex flex-col justify-between gap-6 overflow-y-auto" >
-                    { image ? ( <
-                            div className = "space-y-6" >
-                            { /* Tabs */ } <
-                            div className = "bg-gray-950 p-1 rounded-xl border border-gray-800 grid grid-cols-3 gap-1" >
-                            { [{ id: "filters", label: "🎨 FX Matrix" }, { id: "adjust", label: "⚙️ Adjust" }, { id: "rotate",
-                                    label: "📐 Geometry" }
-                                ].map(tab => ( <
-                                    button key = { tab.id }
-                                    onClick = {
-                                        () => setActiveTab(tab.id) }
-                                    className = { `touch-target py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === tab.id ? "bg-orange-600 text-white shadow-md shadow-orange-900/10" : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"}` }
-                                    aria - label = { `Tab: ${tab.label}` } >
-                                    { tab.label } <
-                                    /button>
-                                ))
-                            } <
-                            /div>
-
-                            { /* Tab content */ } <
-                            div className = "min-h-[220px]" >
-                            { activeTab === "filters" && ( <
-                                    div className = "grid grid-cols-2 gap-2 animate-fadeIn" >
-                                    <
-                                    FilterButton label = "Grayscale"
-                                    icon = "⚫"
-                                    active = { filters.grayscale }
-                                    onClick = {
-                                        () => handleFilterToggle('grayscale') }
-                                    ariaLabel = "Toggle grayscale filter" / >
-                                    <
-                                    FilterButton label = "Sepia"
-                                    icon = "🟫"
-                                    active = { filters.sepia }
-                                    onClick = {
-                                        () => handleFilterToggle('sepia') }
-                                    ariaLabel = "Toggle sepia filter" / >
-                                    <
-                                    FilterButton label = "Invert"
-                                    icon = "🔲"
-                                    active = { filters.invert }
-                                    onClick = {
-                                        () => handleFilterToggle('invert') }
-                                    ariaLabel = "Toggle invert filter" / >
-                                    <
-                                    FilterButton label = "Emboss FX"
-                                    icon = "🔨"
-                                    active = { filters.emboss }
-                                    onClick = {
-                                        () => handleFilterToggle('emboss') }
-                                    ariaLabel = "Toggle emboss filter" / >
-                                    <
-                                    FilterButton label = "Sharpen"
-                                    icon = "✨"
-                                    active = { filters.sharpen }
-                                    onClick = {
-                                        () => handleFilterToggle('sharpen') }
-                                    ariaLabel = "Toggle sharpen filter" / >
-                                    <
-                                    /div>
-                                )
+            }
+            // blur
+            if (blur > 0) {
+                // simple box blur (3x3)
+                const w = canvas.width, h = canvas.height;
+                const src = new Uint8ClampedArray(data);
+                const dst = new Uint8ClampedArray(data);
+                const size = 3;
+                const half = Math.floor(size/2);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let r=0,g=0,b=0,a=0, count=0;
+                        for (let dy=-half; dy<=half; dy++) {
+                            for (let dx=-half; dx<=half; dx++) {
+                                const nx = Math.min(w-1, Math.max(0, x+dx));
+                                const ny = Math.min(h-1, Math.max(0, y+dy));
+                                const idx = (ny*w + nx)*4;
+                                r += src[idx];
+                                g += src[idx+1];
+                                b += src[idx+2];
+                                a += src[idx+3];
+                                count++;
                             }
+                        }
+                        const idx = (y*w + x)*4;
+                        dst[idx] = r/count;
+                        dst[idx+1] = g/count;
+                        dst[idx+2] = b/count;
+                        dst[idx+3] = a/count;
+                    }
+                }
+                data = dst;
+            }
+            currentImageData = data;
+            render();
+        }
 
-                            {
-                                activeTab === "adjust" && ( <
-                                    div className = "space-y-4 animate-fadeIn" >
-                                    <
-                                    SliderInput label = "Brightness"
-                                    value = { filters.brightness }
-                                    min = { -100 }
-                                    max = { 100 }
-                                    unit = "%"
-                                    onChange = {
-                                        (v) => handleSliderChange('brightness', v) }
-                                    onCommit = { handleSliderCommit }
-                                    disabled = { isProcessing }
-                                    ariaLabel = "Brightness slider" / >
-                                    <
-                                    SliderInput label = "Contrast"
-                                    value = { filters.contrast }
-                                    min = { -100 }
-                                    max = { 100 }
-                                    unit = "%"
-                                    onChange = {
-                                        (v) => handleSliderChange('contrast', v) }
-                                    onCommit = { handleSliderCommit }
-                                    disabled = { isProcessing }
-                                    ariaLabel = "Contrast slider" / >
-                                    <
-                                    SliderInput label = "Saturation"
-                                    value = { filters.saturation }
-                                    min = { -100 }
-                                    max = { 100 }
-                                    unit = "%"
-                                    onChange = {
-                                        (v) => handleSliderChange('saturation', v) }
-                                    onCommit = { handleSliderCommit }
-                                    disabled = { isProcessing }
-                                    ariaLabel = "Saturation slider" / >
-                                    <
-                                    SliderInput label = "Blur Radius"
-                                    value = { filters.blurRadius }
-                                    min = { 0 }
-                                    max = { 20 }
-                                    unit = "px"
-                                    onChange = {
-                                        (v) => handleSliderChange('blurRadius', v) }
-                                    onCommit = { handleSliderCommit }
-                                    disabled = { isProcessing || isBlurDisabled }
-                                    ariaLabel = "Blur radius slider" / >
-                                    <
-                                    /div>
-                                )
-                            }
+        // ─── Crop ──────────────────────────────────────────────────
+        function applyCrop(x, y, w, h) {
+            if (!imageLoaded) return;
+            const srcW = canvas.width, srcH = canvas.height;
+            const cropX = Math.round(x * srcW / 100);
+            const cropY = Math.round(y * srcH / 100);
+            const cropW = Math.round(w * srcW / 100);
+            const cropH = Math.round(h * srcH / 100);
+            if (cropW < 1 || cropH < 1) return;
+            const imageData = new ImageData(new Uint8ClampedArray(currentImageData), srcW, srcH);
+            const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
+            canvas.width = cropW;
+            canvas.height = cropH;
+            ctx.putImageData(cropped, 0, 0);
+            // Update original and current
+            originalImage = ctx.getImageData(0, 0, cropW, cropH);
+            currentImageData = new Uint8ClampedArray(originalImage.data);
+            render();
+            populateFilterThumbnails();
+        }
 
-                            {
-                                activeTab === "rotate" && ( <
-                                    div className = "space-y-3 animate-fadeIn" >
-                                    <
-                                    div className = "grid grid-cols-2 gap-2" >
-                                    <
-                                    button onClick = {
-                                        () => handleGeometryTransform('rotateLeft') }
-                                    className = "touch-target p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center"
-                                    disabled = { isProcessing } >
-                                    ↺ Rotate 90° L <
-                                    /button> <
-                                    button onClick = {
-                                        () => handleGeometryTransform('rotateRight') }
-                                    className = "touch-target p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center"
-                                    disabled = { isProcessing } >
-                                    ↻ Rotate 90° R <
-                                    /button> <
-                                    /div> <
-                                    div className = "grid grid-cols-2 gap-2" >
-                                    <
-                                    button onClick = {
-                                        () => handleGeometryTransform('flipH') }
-                                    className = { `touch-target p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipH ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}` }
-                                    disabled = { isProcessing } >
-                                    ↔ Flip Horizontal <
-                                    /button> <
-                                    button onClick = {
-                                        () => handleGeometryTransform('flipV') }
-                                    className = { `touch-target p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipV ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}` }
-                                    disabled = { isProcessing } >
-                                    ↕ Flip Vertical <
-                                    /button> <
-                                    /div> <
-                                    button onClick = {
-                                        () => handleGeometryTransform('clearGeometry') }
-                                    className = "touch-target w-full p-2 bg-gray-950 border border-dashed border-gray-800 hover:border-gray-700 text-gray-400 text-xs rounded-xl font-medium transition mt-2"
-                                    disabled = { isProcessing } >
-                                    Clear Geometric Transforms <
-                                    /button> <
-                                    /div>
-                                )
-                            } <
-                            /div>
+        // ─── Text overlay ──────────────────────────────────────────
+        function addText(text, size, color) {
+            if (!imageLoaded || !text) return;
+            ctx.font = `bold ${size}px 'Segoe UI', system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            const x = canvas.width/2;
+            const y = canvas.height/2;
+            ctx.fillText(text, x, y);
+            // update currentImageData
+            currentImageData = new Uint8ClampedArray(ctx.getImageData(0,0,canvas.width,canvas.height).data);
+            render();
+        }
 
-                            { /* Export */ } <
-                            div className = "pt-4 border-t border-gray-800 space-y-3" >
-                            <
-                            div className = "flex gap-2" >
-                            <
-                            div className = "flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 flex items-center justify-between" >
-                            <
-                            span className = "text-xs text-gray-400 font-medium" > Format < /span> <
-                            select value = { exportFormat }
-                            onChange = {
-                                (e) => setExportFormat(e.target.value) }
-                            className = "bg-transparent text-xs text-orange-400 font-bold focus:outline-none cursor-pointer"
-                            aria - label = "Export format" >
-                            <
-                            option value = "png"
-                            className = "bg-gray-900 text-gray-300" > PNG(.png) < /option> <
-                            option value = "jpeg"
-                            className = "bg-gray-900 text-gray-300" > JPEG(.jpg) < /option> <
-                            /select> <
-                            /div> <
-                            button onClick = { exportAssetOutward }
-                            disabled = { isProcessing }
-                            className = "touch-target px-5 bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white font-semibold rounded-xl text-sm transition-all shadow-md flex items-center justify-center" >
-                            Export <
-                            /button> <
-                            /div> <
-                            /div> <
-                            /div>
-                        ) : ( <
-                            div className = "h-full flex items-center justify-center text-center p-4" >
-                            <
-                            p className = "text-gray-500 text-xs leading-relaxed italic" >
-                            Upload an image asset to unlock studio configuration controls. <
-                            /p> <
-                            /div>
-                        )
-                    } <
-                    /div> <
-                    /div>
+        // ─── Drawing ──────────────────────────────────────────────
+        function initDraw() {
+            let drawing = false;
+            let lastX = 0, lastY = 0;
+            const colorInput = document.getElementById('drawColor');
+            const sizeInput = document.getElementById('drawSize');
 
-                    { /* Status bar */ } {
-                        image && ( <
-                            div className = "px-6 py-2 border-t border-gray-800 bg-gray-950 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-500 font-mono" >
-                            <
-                            div className = "flex items-center gap-2" >
-                            <
-                            span className = { `inline-block w-1.5 h-1.5 rounded-full ${isProcessing ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}` } > < /span> <
-                            span > { isProcessing ? 'Processing…' :
-                                    `Pipeline: Stage ${historyIndex + 1} of ${history.length}` } < /span> <
-                            /div> <
-                            div className = "flex items-center gap-4" >
-                            <
-                            span > { dimensions.width } px × { dimensions.height }
-                            px < /span> <
-                            span className = "hidden md:inline" > ⌘ Z↩ &nbsp;|&nbsp; ⌘ Y↪ &nbsp;|&nbsp; ⌘ S⬇ < /span> <
-                            /div> <
-                            /div>
-                        )
-                    } <
-                    /div> <
-                    /div>
-                );
+            function startDraw(e) {
+                if (!drawMode || !imageLoaded) return;
+                e.preventDefault();
+                drawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                lastX = mouseX;
+                lastY = mouseY;
+                // draw a dot
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, parseInt(sizeInput.value)/2, 0, Math.PI*2);
+                ctx.fillStyle = colorInput.value;
+                ctx.fill();
+                currentImageData = new Uint8ClampedArray(ctx.getImageData(0,0,canvas.width,canvas.height).data);
+                render();
             }
 
-            const root = ReactDOM.createRoot(document.getElementById("root"));
-            root.render( < LuminorStudioPro / > );
-    </script>
+            function drawMove(e) {
+                if (!drawing || !drawMode || !imageLoaded) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(mouseX, mouseY);
+                ctx.strokeStyle = colorInput.value;
+                ctx.lineWidth = parseInt(sizeInput.value);
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                lastX = mouseX;
+                lastY = mouseY;
+                currentImageData = new Uint8ClampedArray(ctx.getImageData(0,0,canvas.width,canvas.height).data);
+                render();
+            }
+
+            function endDraw(e) {
+                if (drawing) {
+                    drawing = false;
+                    currentImageData = new Uint8ClampedArray(ctx.getImageData(0,0,canvas.width,canvas.height).data);
+                    render();
+                }
+            }
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', drawMove);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('mouseleave', endDraw);
+
+            // Touch support
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                canvas.dispatchEvent(new MouseEvent('mouseup'));
+            }, {passive: false});
+        }
+
+        // ─── Collage ──────────────────────────────────────────────
+        let collageImages = [];
+
+        function renderCollagePreviews() {
+            const container = document.getElementById('collagePreview');
+            container.innerHTML = '';
+            collageImages.forEach((img, idx) => {
+                const div = document.createElement('div');
+                div.style.position = 'relative';
+                const thumb = document.createElement('img');
+                thumb.src = img.src;
+                thumb.style.width = '100%';
+                thumb.style.aspectRatio = '1/1';
+                thumb.style.objectFit = 'cover';
+                thumb.style.borderRadius = '8px';
+                div.appendChild(thumb);
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '✕';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '2px';
+                removeBtn.style.right = '2px';
+                removeBtn.style.background = '#f5576c';
+                removeBtn.style.border = 'none';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.color = '#fff';
+                removeBtn.style.fontSize = '12px';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.addEventListener('click', () => {
+                    collageImages.splice(idx, 1);
+                    renderCollagePreviews();
+                });
+                div.appendChild(removeBtn);
+                container.appendChild(div);
+            });
+        }
+
+        function createCollage() {
+            if (collageImages.length < 2) {
+                alert('Please upload at least 2 images.');
+                return;
+            }
+            const cols = Math.min(collageImages.length, 4);
+            const rows = Math.ceil(collageImages.length / cols);
+            const cellSize = 300;
+            const collageW = cols * cellSize;
+            const collageH = rows * cellSize;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = collageW;
+            tempCanvas.height = collageH;
+            const tCtx = tempCanvas.getContext('2d');
+            let loaded = 0;
+            collageImages.forEach((imgObj, idx) => {
+                const img = new Image();
+                img.onload = () => {
+                    const x = (idx % cols) * cellSize;
+                    const y = Math.floor(idx / cols) * cellSize;
+                    // cover fit
+                    const aspect = img.width / img.height;
+                    let drawW = cellSize, drawH = cellSize;
+                    if (aspect > 1) {
+                        drawH = cellSize / aspect;
+                    } else {
+                        drawW = cellSize * aspect;
+                    }
+                    const offX = (cellSize - drawW)/2;
+                    const offY = (cellSize - drawH)/2;
+                    tCtx.drawImage(img, x+offX, y+offY, drawW, drawH);
+                    loaded++;
+                    if (loaded === collageImages.length) {
+                        // set main canvas to collage
+                        canvas.width = collageW;
+                        canvas.height = collageH;
+                        ctx.drawImage(tempCanvas, 0, 0);
+                        originalImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        currentImageData = new Uint8ClampedArray(originalImage.data);
+                        imageLoaded = true;
+                        render();
+                        populateFilterThumbnails();
+                    }
+                };
+                img.src = imgObj.src;
+            });
+        }
+
+        // ─── Tab switching ────────────────────────────────────────
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                Object.keys(panels).forEach(key => {
+                    panels[key].classList.toggle('active', key === tab);
+                });
+                // If draw tab, enable draw mode; else disable
+                if (tab === 'draw') {
+                    drawMode = true;
+                    document.getElementById('drawToggle').textContent = '✏️ Drawing (ON)';
+                } else {
+                    drawMode = false;
+                    document.getElementById('drawToggle').textContent = '✏️ Draw';
+                }
+            });
+        });
+
+        // ─── Event bindings ──────────────────────────────────────
+
+        // Upload via file input (hidden)
+        const uploadInput = document.createElement('input');
+        uploadInput.type = 'file';
+        uploadInput.accept = 'image/*';
+        uploadInput.style.display = 'none';
+        document.body.appendChild(uploadInput);
+        uploadInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                loadImageFromFile(e.target.files[0]);
+            }
+            uploadInput.value = '';
+        });
+
+        // Click on canvas wrapper to upload
+        document.querySelector('.canvas-wrapper').addEventListener('click', () => {
+            if (!imageLoaded) uploadInput.click();
+        });
+
+        // Upload area inside collage
+        document.getElementById('collageUpload').addEventListener('click', () => {
+            document.getElementById('collageInput').click();
+        });
+        document.getElementById('collageInput').addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length) {
+                for (let file of files) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        collageImages.push({ src: ev.target.result });
+                        renderCollagePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            e.target.value = '';
+        });
+
+        // Filter grid population on load (empty)
+        populateFilterThumbnails();
+
+        // Adjust sliders real-time display
+        ['brightness','contrast','saturation','blur'].forEach(id => {
+            const input = document.getElementById(id);
+            const val = document.getElementById(id+'Val');
+            input.addEventListener('input', () => {
+                val.textContent = input.value;
+            });
+        });
+
+        // Apply adjust
+        document.getElementById('applyAdjust').addEventListener('click', () => {
+            const b = parseInt(document.getElementById('brightness').value);
+            const c = parseInt(document.getElementById('contrast').value);
+            const s = parseInt(document.getElementById('saturation').value);
+            const bl = parseFloat(document.getElementById('blur').value);
+            applyAdjustments(b, c, s, bl);
+        });
+
+        // Crop sliders
+        ['cropX','cropY','cropW','cropH'].forEach(id => {
+            const input = document.getElementById(id);
+            const val = document.getElementById(id+'Val');
+            input.addEventListener('input', () => {
+                val.textContent = input.value;
+            });
+        });
+        document.getElementById('applyCrop').addEventListener('click', () => {
+            const x = parseInt(document.getElementById('cropX').value);
+            const y = parseInt(document.getElementById('cropY').value);
+            const w = parseInt(document.getElementById('cropW').value);
+            const h = parseInt(document.getElementById('cropH').value);
+            applyCrop(x, y, w, h);
+        });
+
+        // Text
+        document.getElementById('addTextBtn').addEventListener('click', () => {
+            const text = document.getElementById('textInput').value;
+            const size = parseInt(document.getElementById('textSize').value);
+            const color = document.getElementById('textColor').value;
+            if (text) addText(text, size, color);
+        });
+        document.getElementById('textSize').addEventListener('input', () => {
+            document.getElementById('textSizeVal').textContent = document.getElementById('textSize').value;
+        });
+
+        // Draw
+        document.getElementById('drawToggle').addEventListener('click', function() {
+            drawMode = !drawMode;
+            this.textContent = drawMode ? '✏️ Drawing (ON)' : '✏️ Draw';
+        });
+        document.getElementById('drawSize').addEventListener('input', () => {
+            document.getElementById('drawSizeVal').textContent = document.getElementById('drawSize').value;
+        });
+        document.getElementById('clearDraw').addEventListener('click', () => {
+            if (imageLoaded) {
+                ctx.putImageData(new ImageData(new Uint8ClampedArray(originalImage.data), canvas.width, canvas.height), 0, 0);
+                currentImageData = new Uint8ClampedArray(originalImage.data);
+                render();
+            }
+        });
+        initDraw();
+
+        // Collage
+        document.getElementById('makeCollage').addEventListener('click', createCollage);
+        document.getElementById('clearCollage').addEventListener('click', () => {
+            collageImages = [];
+            renderCollagePreviews();
+        });
+
+        // Save
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (!imageLoaded) return;
+            const link = document.createElement('a');
+            link.download = 'edited_photo.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Reset
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (!imageLoaded) return;
+            ctx.putImageData(new ImageData(new Uint8ClampedArray(originalImage.data), canvas.width, canvas.height), 0, 0);
+            currentImageData = new Uint8ClampedArray(originalImage.data);
+            render();
+            populateFilterThumbnails();
+            document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
+        });
+
+        // ─── Init ──────────────────────────────────────────────────
+        // Set default canvas background
+        ctx.fillStyle = '#0a0a0c';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Preload with a demo message
+        ctx.fillStyle = '#3a3a3c';
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Click here to upload an image', canvas.width/2, canvas.height/2);
+
+        console.log('Photo Editor Pro Clone ready!');
+    })();
+</script>
 </body>
 </html>
