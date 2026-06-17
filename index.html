@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Luminor Studio Pro</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: blob:; connect-src 'self';" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        /* Scrollbar – WebKit + Firefox */
         html {
             scrollbar-width: thin;
             scrollbar-color: #f97316 #1f2937;
@@ -30,7 +30,6 @@
             background: #ea580c;
         }
 
-        /* Range slider – touch-action prevents page scroll */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -49,7 +48,7 @@
             background: #f97316;
             cursor: pointer;
             border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
             transition: transform 0.15s;
         }
         input[type="range"]::-webkit-slider-thumb:hover {
@@ -61,30 +60,54 @@
             cursor: not-allowed;
         }
 
-        /* Glass panel */
         .glass {
             background: rgba(17, 24, 39, 0.95);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
 
-        /* Canvas checkerboard */
         .canvas-container {
             background-image: linear-gradient(45deg, #262626 25%, transparent 25%),
-                              linear-gradient(-45deg, #262626 25%, transparent 25%),
-                              linear-gradient(45deg, transparent 75%, #262626 75%),
-                              linear-gradient(-45deg, transparent 75%, #262626 75%);
+                linear-gradient(-45deg, #262626 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #262626 75%),
+                linear-gradient(-45deg, transparent 75%, #262626 75%);
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0;
             background-color: #1a1a1a;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .animate-fadeIn {
             animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #f97316;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
         }
     </style>
 </head>
@@ -92,56 +115,23 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useRef, useCallback, useEffect } = React;
+        const { useState, useRef, useCallback, useEffect, useMemo, useReducer, memo } = React;
 
         // ---------- Constants ----------
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-        const MAX_DIM = 4096; // maximum canvas dimension
+        const MAX_DIM = 4096;
+        const HISTORY_LIMIT = 50;
 
-        function LuminorStudioPro() {
-            // ----- Refs -----
-            const canvasRef = useRef(null);
-            const fileInputRef = useRef(null);
-            const historyIndexRef = useRef(-1);
-            const filtersRef = useRef(null);
-            const renderFrameId = useRef(null);
-            const renderPendingRef = useRef(false);
+        // ---------- Worker Setup (inline for single-file) ----------
+        const workerBlob = new Blob([`
+            self.onmessage = function(e) {
+                const { imageData, filters } = e.data;
+                const data = imageData.data;
+                const width = imageData.width;
+                const height = imageData.height;
 
-            // ----- State -----
-            const [image, setImage] = useState(null);
-            const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-            const [history, setHistory] = useState([]);
-            const [historyIndex, setHistoryIndex] = useState(-1);
-            const [warning, setWarning] = useState(null); // for user alerts
-
-            const [filters, setFilters] = useState({
-                brightness: 0,
-                contrast: 0,
-                saturation: 0,
-                blurRadius: 0,
-                grayscale: false,
-                sepia: false,
-                invert: false,
-                emboss: false,
-                sharpen: false,
-                rotation: 0,
-                flipH: false,
-                flipV: false
-            });
-
-            const [activeTab, setActiveTab] = useState("filters");
-            const [exportFormat, setExportFormat] = useState("png");
-
-            // Keep refs in sync
-            useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
-            useEffect(() => { filtersRef.current = filters; }, [filters]);
-
-            // ---------- Core Pixel Processor ----------
-            const processPixels = useCallback((imgData, currentFilters) => {
-                const { brightness, contrast, saturation, blurRadius, grayscale, sepia, invert, emboss, sharpen } = currentFilters;
-                const data = imgData.data;
-                const width = imgData.width;
-                const height = imgData.height;
+                // --- Pixel adjustments ---
+                const { brightness, contrast, saturation, blurRadius, grayscale, sepia, invert, emboss, sharpen } = filters;
                 const hasPixelAdjustments = brightness !== 0 || contrast !== 0 || saturation !== 0 || grayscale || sepia || invert;
 
                 if (hasPixelAdjustments) {
@@ -186,7 +176,7 @@
                     }
                 }
 
-                // Convolution filters
+                // --- Convolution filters ---
                 if (blurRadius > 0 || emboss || sharpen) {
                     const originalData = new Uint8ClampedArray(data);
                     let kernel = [];
@@ -226,14 +216,147 @@
                         }
                     }
                 }
-                return imgData;
+
+                self.postMessage({ imageData }, [imageData.data.buffer]);
+            };
+        `], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(workerBlob);
+
+        // ---------- Helper: filter reducer ----------
+        const defaultFilters = {
+            brightness: 0,
+            contrast: 0,
+            saturation: 0,
+            blurRadius: 0,
+            grayscale: false,
+            sepia: false,
+            invert: false,
+            emboss: false,
+            sharpen: false,
+            rotation: 0,
+            flipH: false,
+            flipV: false
+        };
+
+        function filterReducer(state, action) {
+            switch (action.type) {
+                case 'SET':
+                    return { ...state, ...action.payload };
+                case 'TOGGLE':
+                    return { ...state, [action.key]: !state[action.key] };
+                case 'RESET':
+                    return { ...defaultFilters };
+                default:
+                    return state;
+            }
+        }
+
+        // ---------- Memoized Control Components ----------
+        const FilterButton = memo(({ label, icon, active, onClick, ariaLabel }) => (
+            <button
+                onClick={onClick}
+                aria-label={ariaLabel || label}
+                className={`touch-target p-3 rounded-xl border text-left text-xs font-medium transition-all flex flex-col justify-between gap-3 h-20 ${active ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"
+                    }`}
+            >
+                <span className="text-base">{icon}</span>
+                <span>{label}</span>
+            </button>
+        ));
+
+        const SliderInput = memo(({ label, value, min, max, unit, disabled, onChange, onCommit, ariaLabel }) => (
+            <div className="space-y-2 bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <div className="flex justify-between text-xs font-semibold text-gray-400">
+                    <span id={`slider-label-${label}`}>{label}</span>
+                    <span className="text-orange-400 font-mono">{value > 0 ? `+${value}` : value}{unit}</span>
+                </div>
+                <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(e) => onChange(Number(e.target.value))}
+                    onMouseUp={onCommit}
+                    onTouchEnd={onCommit}
+                    className="w-full accent-orange-500"
+                    aria-labelledby={`slider-label-${label}`}
+                    aria-valuenow={value}
+                    aria-valuemin={min}
+                    aria-valuemax={max}
+                />
+                {disabled && (
+                    <p className="text-[10px] text-gray-500 italic">Disabled when Emboss or Sharpen is active</p>
+                )}
+            </div>
+        ));
+
+        // ---------- Main Component ----------
+        function LuminorStudioPro() {
+            // ----- Refs -----
+            const canvasRef = useRef(null);
+            const fileInputRef = useRef(null);
+            const workerRef = useRef(null);
+            const historyIndexRef = useRef(-1);
+            const renderFrameId = useRef(null);
+            const renderPendingRef = useRef(false);
+            const dragStartIndexRef = useRef(-1);
+            const isProcessingRef = useRef(false);
+            const abortControllerRef = useRef(null);
+
+            // ----- State -----
+            const [image, setImage] = useState(null);
+            const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+            const [history, setHistory] = useState([]);
+            const [historyIndex, setHistoryIndex] = useState(-1);
+            const [warning, setWarning] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [isProcessing, setIsProcessing] = useState(false);
+
+            const [filters, dispatchFilters] = useReducer(filterReducer, defaultFilters);
+            const [activeTab, setActiveTab] = useState("filters");
+            const [exportFormat, setExportFormat] = useState("png");
+
+            // Keep refs in sync
+            useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
+
+            // ----- Worker setup -----
+            useEffect(() => {
+                let worker = null;
+                try {
+                    worker = new Worker(workerUrl);
+                    worker.onmessage = (e) => {
+                        const processed = e.data.imageData;
+                        const canvas = canvasRef.current;
+                        if (canvas) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.putImageData(processed, 0, 0);
+                        }
+                        setIsProcessing(false);
+                        isProcessingRef.current = false;
+                    };
+                    worker.onerror = (err) => {
+                        setWarning('Worker error: ' + err.message);
+                        setIsProcessing(false);
+                        isProcessingRef.current = false;
+                    };
+                    workerRef.current = worker;
+                } catch (err) {
+                    setWarning('Web Worker not supported, falling back to main-thread processing.');
+                    workerRef.current = null;
+                }
+                return () => {
+                    if (workerRef.current) {
+                        try { workerRef.current.terminate(); } catch (_) {}
+                    }
+                };
             }, []);
 
-            // ---------- Render pipeline (called only when needed) ----------
+            // ----- Core pipeline -----
             const executePipelineRender = useCallback((targetFilters) => {
                 const canvas = canvasRef.current;
                 if (!canvas || !image) return;
-                const ctx = canvas.getContext("2d");
+                const ctx = canvas.getContext('2d');
 
                 const is90or270 = targetFilters.rotation === 90 || targetFilters.rotation === 270;
                 const targetW = is90or270 ? image.height : image.width;
@@ -250,63 +373,243 @@
                 ctx.restore();
 
                 const baseImageData = ctx.getImageData(0, 0, targetW, targetH);
-                const processed = processPixels(baseImageData, targetFilters);
-                ctx.putImageData(processed, 0, 0);
-            }, [image, processPixels]);
 
-            // ---------- Scheduled render (rAF coalescing) ----------
+                // If worker available, use it
+                if (workerRef.current) {
+                    if (abortControllerRef.current) {
+                        try { abortControllerRef.current.abort(); } catch (_) {}
+                    }
+                    abortControllerRef.current = new AbortController();
+                    setIsProcessing(true);
+                    isProcessingRef.current = true;
+                    try {
+                        workerRef.current.postMessage({
+                            imageData: baseImageData,
+                            filters: targetFilters
+                        }, [baseImageData.data.buffer]);
+                    } catch (err) {
+                        // Fallback to main-thread
+                        setIsProcessing(false);
+                        isProcessingRef.current = false;
+                        const processed = processPixelsMainThread(baseImageData, targetFilters);
+                        ctx.putImageData(processed, 0, 0);
+                    }
+                    return;
+                }
+
+                // Fallback: main-thread processing
+                const processed = processPixelsMainThread(baseImageData, targetFilters);
+                ctx.putImageData(processed, 0, 0);
+            }, [image]);
+
+            // ----- Main-thread fallback -----
+            const processPixelsMainThread = useCallback((imgData, currentFilters) => {
+                const { brightness, contrast, saturation, blurRadius, grayscale, sepia, invert, emboss, sharpen } =
+                currentFilters;
+                const data = imgData.data;
+                const width = imgData.width;
+                const height = imgData.height;
+                const hasPixelAdjustments = brightness !== 0 || contrast !== 0 || saturation !== 0 || grayscale || sepia ||
+                    invert;
+
+                if (hasPixelAdjustments) {
+                    const bVal = (brightness / 100) * 255;
+                    const cFactor = (contrast + 100) / 100;
+                    const sFactor = (saturation + 100) / 100;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i],
+                            g = data[i + 1],
+                            b = data[i + 2];
+
+                        if (grayscale) {
+                            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                            r = g = b = gray;
+                        }
+                        if (sepia) {
+                            const tr = r,
+                                tg = g,
+                                tb = b;
+                            r = Math.min(255, 0.393 * tr + 0.769 * tg + 0.189 * tb);
+                            g = Math.min(255, 0.349 * tr + 0.686 * tg + 0.168 * tb);
+                            b = Math.min(255, 0.272 * tr + 0.534 * tg + 0.131 * tb);
+                        }
+                        if (invert) {
+                            r = 255 - r;
+                            g = 255 - g;
+                            b = 255 - b;
+                        }
+                        if (brightness !== 0) {
+                            r += bVal;
+                            g += bVal;
+                            b += bVal;
+                        }
+                        if (contrast !== 0) {
+                            r = (r - 128) * cFactor + 128;
+                            g = (g - 128) * cFactor + 128;
+                            b = (b - 128) * cFactor + 128;
+                        }
+                        if (saturation !== 0 && !grayscale) {
+                            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                            r = luma + (r - luma) * sFactor;
+                            g = luma + (g - luma) * sFactor;
+                            b = luma + (b - luma) * sFactor;
+                        }
+
+                        data[i] = Math.min(255, Math.max(0, r));
+                        data[i + 1] = Math.min(255, Math.max(0, g));
+                        data[i + 2] = Math.min(255, Math.max(0, b));
+                    }
+                }
+
+                // Convolution
+                if (blurRadius > 0 || emboss || sharpen) {
+                    const originalData = new Uint8ClampedArray(data);
+                    let kernel = [];
+
+                    if (emboss) {
+                        kernel = [
+                            [-2, -1, 0],
+                            [-1, 1, 1],
+                            [0, 1, 2]
+                        ];
+                    } else if (sharpen) {
+                        kernel = [
+                            [0, -1, 0],
+                            [-1, 5, -1],
+                            [0, -1, 0]
+                        ];
+                    } else if (blurRadius > 0) {
+                        const size = Math.min(Math.round(blurRadius / 2) * 2 + 1, 9);
+                        const cell = 1 / (size * size);
+                        kernel = Array.from({ length: size }, () => Array(size).fill(cell));
+                    }
+
+                    if (kernel.length > 0) {
+                        const kSize = kernel.length;
+                        const half = Math.floor(kSize / 2);
+                        for (let y = 0; y < height; y++) {
+                            for (let x = 0; x < width; x++) {
+                                let rSum = 0,
+                                    gSum = 0,
+                                    bSum = 0;
+                                for (let ky = 0; ky < kSize; ky++) {
+                                    for (let kx = 0; kx < kSize; kx++) {
+                                        const px = Math.min(width - 1, Math.max(0, x + kx - half));
+                                        const py = Math.min(height - 1, Math.max(0, y + ky - half));
+                                        const idx = (py * width + px) * 4;
+                                        const w = kernel[ky][kx];
+                                        rSum += originalData[idx] * w;
+                                        gSum += originalData[idx + 1] * w;
+                                        bSum += originalData[idx + 2] * w;
+                                    }
+                                }
+                                const dIdx = (y * width + x) * 4;
+                                data[dIdx] = Math.min(255, Math.max(0, rSum));
+                                data[dIdx + 1] = Math.min(255, Math.max(0, gSum));
+                                data[dIdx + 2] = Math.min(255, Math.max(0, bSum));
+                            }
+                        }
+                    }
+                }
+                return imgData;
+            }, []);
+
+            // ----- Schedule render (rAF coalescing) -----
             const scheduleRender = useCallback(() => {
                 if (renderPendingRef.current) return;
                 renderPendingRef.current = true;
                 renderFrameId.current = requestAnimationFrame(() => {
                     renderPendingRef.current = false;
-                    executePipelineRender(filtersRef.current);
+                    if (!isProcessingRef.current) {
+                        executePipelineRender(filters);
+                    } else {
+                        // If processing, re-schedule after a short delay
+                        renderPendingRef.current = true;
+                        setTimeout(() => {
+                            renderPendingRef.current = false;
+                            scheduleRender();
+                        }, 50);
+                    }
                 });
-            }, [executePipelineRender]);
+            }, [executePipelineRender, filters]);
 
-            // Cleanup rAF on unmount
             useEffect(() => {
                 return () => {
                     if (renderFrameId.current) cancelAnimationFrame(renderFrameId.current);
                 };
             }, []);
 
-            // When image or filters change, schedule a render (except during initial load handled by useEffect)
             useEffect(() => {
                 if (image) scheduleRender();
             }, [image, scheduleRender]);
 
-            // ---------- History commit (only on complete adjustments) ----------
+            // ----- History -----
             const commitToHistory = useCallback((updatedFilters) => {
                 const idx = historyIndexRef.current;
                 setHistory(prev => {
                     const sliced = prev.slice(0, idx + 1);
                     const fresh = [...sliced, updatedFilters];
-                    if (fresh.length > 30) fresh.shift();
+                    if (fresh.length > HISTORY_LIMIT) fresh.shift();
                     return fresh;
                 });
-                setHistoryIndex(prev => Math.min(prev + 1, 29));
+                setHistoryIndex(prev => Math.min(prev + 1, HISTORY_LIMIT - 1));
             }, []);
 
-            // ---------- Event Handlers ----------
+            // ----- Travel history (undo/redo) -----
+            const travelHistory = useCallback((targetIndex) => {
+                if (targetIndex < 0 || targetIndex >= history.length) return;
+                const timePointFilters = history[targetIndex];
+                dispatchFilters({ type: 'SET', payload: timePointFilters });
+                setHistoryIndex(targetIndex);
+                scheduleRender();
+            }, [history, scheduleRender]);
+
+            const undo = useCallback(() => {
+                if (historyIndex > 0 && !isProcessingRef.current) {
+                    travelHistory(historyIndex - 1);
+                }
+            }, [historyIndex, travelHistory]);
+
+            const redo = useCallback(() => {
+                if (historyIndex < history.length - 1 && !isProcessingRef.current) {
+                    travelHistory(historyIndex + 1);
+                }
+            }, [historyIndex, history.length, travelHistory]);
+
+            // ----- Handlers -----
             const handleFilterToggle = (key) => {
-                const next = { ...filters, [key]: !filters[key] };
-                setFilters(next);
-                commitToHistory(next);
+                if (isProcessingRef.current) return;
+                dispatchFilters({ type: 'TOGGLE', key });
+                const newState = { ...filters, [key]: !filters[key] };
+                commitToHistory(newState);
             };
 
             const handleSliderChange = (key, val) => {
-                const next = { ...filters, [key]: val };
-                setFilters(next);
-                // Immediate re-render via rAF for responsive feel
+                if (dragStartIndexRef.current === -1) {
+                    dragStartIndexRef.current = historyIndexRef.current;
+                }
+                dispatchFilters({ type: 'SET', payload: { [key]: val } });
                 scheduleRender();
             };
 
             const handleSliderCommit = () => {
-                commitToHistory(filters);
+                if (dragStartIndexRef.current !== -1) {
+                    if (dragStartIndexRef.current === historyIndexRef.current) {
+                        commitToHistory(filters);
+                    } else {
+                        // History changed during drag – reset to current history state
+                        const currentState = history[historyIndexRef.current];
+                        if (currentState) {
+                            dispatchFilters({ type: 'SET', payload: currentState });
+                        }
+                    }
+                    dragStartIndexRef.current = -1;
+                }
             };
 
             const handleGeometryTransform = (type) => {
+                if (isProcessingRef.current) return;
                 let next = { ...filters };
                 if (type === "rotateLeft") next.rotation = (filters.rotation - 90 + 360) % 360;
                 if (type === "rotateRight") next.rotation = (filters.rotation + 90) % 360;
@@ -317,108 +620,125 @@
                     next.flipH = false;
                     next.flipV = false;
                 }
-                setFilters(next);
+                dispatchFilters({ type: 'SET', payload: next });
                 commitToHistory(next);
             };
 
-            // Undo / Redo
-            const travelHistory = useCallback((targetIndex) => {
-                if (targetIndex < 0 || targetIndex >= history.length) return;
-                const timePointFilters = history[targetIndex];
-                setFilters(timePointFilters);
-                setHistoryIndex(targetIndex);
-                scheduleRender();
-            }, [history, scheduleRender]);
-
-            const undo = () => historyIndex > 0 && travelHistory(historyIndex - 1);
-            const redo = () => historyIndex < history.length - 1 && travelHistory(historyIndex + 1);
-
             const resetAllSettings = () => {
-                const clean = {
-                    brightness: 0, contrast: 0, saturation: 0, blurRadius: 0,
-                    grayscale: false, sepia: false, invert: false, emboss: false, sharpen: false,
-                    rotation: 0, flipH: false, flipV: false
-                };
-                setFilters(clean);
-                commitToHistory(clean);
+                if (isProcessingRef.current) return;
+                dispatchFilters({ type: 'RESET' });
+                commitToHistory(defaultFilters);
             };
 
-            // ---------- File handling with validation & downscaling ----------
-            const processFileInward = (file) => {
+            // ----- Image loading with createImageBitmap -----
+            const processFileInward = useCallback(async (file) => {
                 if (!file) return;
-                // Size check
+                setWarning(null);
+                setIsLoading(true);
+
                 if (file.size > MAX_FILE_SIZE) {
                     setWarning("File too large. Maximum size is 50 MB.");
-                    return;
-                }
-                if (!file.type.startsWith("image/")) {
-                    setWarning("Invalid file type. Please select an image.");
+                    setIsLoading(false);
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let srcWidth = img.width;
-                        let srcHeight = img.height;
-                        let finalImage = img;
+                const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/bmp', 'image/tiff'];
+                if (!validTypes.includes(file.type) && !file.type.startsWith('image/')) {
+                    setWarning("Unsupported file type. Please use PNG, JPEG, WebP, BMP, or TIFF.");
+                    setIsLoading(false);
+                    return;
+                }
 
-                        if (srcWidth > MAX_DIM || srcHeight > MAX_DIM) {
-                            // Downscale to fit within MAX_DIM
-                            const ratio = Math.min(MAX_DIM / srcWidth, MAX_DIM / srcHeight);
-                            const newW = Math.round(srcWidth * ratio);
-                            const newH = Math.round(srcHeight * ratio);
-                            const offCanvas = document.createElement("canvas");
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    let imageBitmap = null;
+                    let imgWidth = 0,
+                        imgHeight = 0;
+
+                    // Try createImageBitmap with resize
+                    try {
+                        // First, get dimensions without decoding full image
+                        const blob = new Blob([arrayBuffer], { type: file.type });
+                        const tempBitmap = await createImageBitmap(blob);
+                        imgWidth = tempBitmap.width;
+                        imgHeight = tempBitmap.height;
+                        tempBitmap.close();
+
+                        const needsResize = imgWidth > MAX_DIM || imgHeight > MAX_DIM;
+                        const resizeOpts = needsResize ? {
+                            resizeWidth: Math.min(MAX_DIM, imgWidth),
+                            resizeHeight: Math.min(MAX_DIM, imgHeight),
+                            resizeQuality: 'medium'
+                        } : {};
+
+                        imageBitmap = await createImageBitmap(blob, resizeOpts);
+
+                        if (needsResize) {
+                            setWarning(`Image downscaled from ${imgWidth}×${imgHeight} to ${imageBitmap.width}×${imageBitmap.height} for performance.`);
+                        }
+                    } catch (err) {
+                        // Fallback: use Image element
+                        const url = URL.createObjectURL(new Blob([arrayBuffer], { type: file.type }));
+                        const img = new Image();
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = reject;
+                            img.src = url;
+                        });
+                        imgWidth = img.width;
+                        imgHeight = img.height;
+                        const needsResize = imgWidth > MAX_DIM || imgHeight > MAX_DIM;
+                        if (needsResize) {
+                            const ratio = Math.min(MAX_DIM / imgWidth, MAX_DIM / imgHeight);
+                            const newW = Math.round(imgWidth * ratio);
+                            const newH = Math.round(imgHeight * ratio);
+                            const offCanvas = document.createElement('canvas');
                             offCanvas.width = newW;
                             offCanvas.height = newH;
-                            const offCtx = offCanvas.getContext("2d");
+                            const offCtx = offCanvas.getContext('2d');
                             offCtx.drawImage(img, 0, 0, newW, newH);
-                            finalImage = new Image();
-                            finalImage.src = offCanvas.toDataURL();
-                            finalImage.onload = () => {
-                                setImage(finalImage);
-                                setDimensions({ width: newW, height: newH });
-                                initializeEditor(finalImage);
-                            };
-                            setWarning(`Image downscaled from ${srcWidth}×${srcHeight} to ${newW}×${newH} for performance.`);
-                            return;
+                            imageBitmap = await createImageBitmap(offCanvas);
+                            setWarning(`Image downscaled from ${imgWidth}×${imgHeight} to ${newW}×${newH} for performance.`);
+                        } else {
+                            imageBitmap = await createImageBitmap(img);
                         }
+                        URL.revokeObjectURL(url);
+                    }
 
-                        setImage(img);
-                        setDimensions({ width: srcWidth, height: srcHeight });
-                        initializeEditor(img);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            };
+                    if (!imageBitmap) throw new Error('Failed to load image');
+
+                    setImage(imageBitmap);
+                    setDimensions({ width: imageBitmap.width, height: imageBitmap.height });
+                    initializeEditor(imageBitmap);
+
+                } catch (err) {
+                    setWarning('Failed to load image: ' + (err.message || 'unknown error'));
+                } finally {
+                    setIsLoading(false);
+                }
+            }, []);
 
             const initializeEditor = (img) => {
-                const baseFilters = {
-                    brightness: 0, contrast: 0, saturation: 0, blurRadius: 0,
-                    grayscale: false, sepia: false, invert: false, emboss: false, sharpen: false,
-                    rotation: 0, flipH: false, flipV: false
-                };
-                setFilters(baseFilters);
-                setHistory([baseFilters]);
+                dispatchFilters({ type: 'RESET' });
+                setHistory([defaultFilters]);
                 setHistoryIndex(0);
-                // render will be triggered by useEffect on image change
+                dragStartIndexRef.current = -1;
             };
 
             const handleImageUpload = (e) => {
                 setWarning(null);
-                processFileInward(e.target.files?.[0]);
-                e.target.value = "";
+                const file = e.target.files?.[0];
+                if (file) processFileInward(file);
+                e.target.value = '';
             };
 
-            // ---------- Export ----------
-            const exportAssetOutward = () => {
+            // ----- Export -----
+            const exportAssetOutward = useCallback(() => {
                 const canvas = canvasRef.current;
-                if (!canvas) return;
+                if (!canvas || isProcessingRef.current) return;
                 try {
                     const mime = exportFormat === "png" ? "image/png" : "image/jpeg";
-                    const quality = exportFormat === "jpeg" ? 0.95 : 1.0;
+                    const quality = exportFormat === "jpeg" ? 0.92 : 1.0;
                     const link = document.createElement("a");
                     link.download = `luminor-studio-export.${exportFormat}`;
                     link.href = canvas.toDataURL(mime, quality);
@@ -426,30 +746,30 @@
                 } catch (err) {
                     setWarning("Export failed. Canvas may be tainted or too large.");
                 }
-            };
+            }, [exportFormat]);
 
-            // ---------- Keyboard shortcuts ----------
+            // ----- Keyboard shortcuts -----
             useEffect(() => {
                 const handler = (e) => {
                     const mod = e.ctrlKey || e.metaKey;
-                    if (mod && e.key.toLowerCase() === "z") {
+                    if (mod && e.key.toLowerCase() === 'z') {
                         e.preventDefault();
                         e.shiftKey ? redo() : undo();
                     }
-                    if (mod && e.key.toLowerCase() === "y") {
+                    if (mod && e.key.toLowerCase() === 'y') {
                         e.preventDefault();
                         redo();
                     }
-                    if (mod && e.key.toLowerCase() === "s") {
+                    if (mod && e.key.toLowerCase() === 's') {
                         e.preventDefault();
                         exportAssetOutward();
                     }
                 };
-                window.addEventListener("keydown", handler);
-                return () => window.removeEventListener("keydown", handler);
-            }, [historyIndex, history, filters]);
+                window.addEventListener('keydown', handler);
+                return () => window.removeEventListener('keydown', handler);
+            }, [undo, redo, exportAssetOutward]);
 
-            // Auto-dismiss warning after 5 seconds
+            // Auto-dismiss warning after 5s
             useEffect(() => {
                 if (warning) {
                     const timer = setTimeout(() => setWarning(null), 5000);
@@ -457,177 +777,349 @@
                 }
             }, [warning]);
 
-            // ---------- UI ----------
-            return (
-                <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
-                    <div className="glass w-full max-w-6xl rounded-3xl shadow-2xl border border-gray-800 flex flex-col overflow-hidden max-h-[94vh]">
-                        {/* Warning banner */}
-                        {warning && (
-                            <div className="px-6 py-2 bg-yellow-900/60 border-b border-yellow-700/50 text-yellow-200 text-xs flex justify-between items-center">
-                                <span>⚠️ {warning}</span>
-                                <button onClick={() => setWarning(null)} className="text-yellow-300 ml-4 font-bold">✕</button>
-                            </div>
-                        )}
+            // ----- UI -----
+            const isBlurDisabled = filters.emboss || filters.sharpen;
 
-                        {/* Header */}
-                        <div className="px-6 py-4 border-b border-gray-800 bg-gray-900/60 flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">📸</span>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 bg-clip-text text-transparent tracking-tight">
-                                    Luminor Studio Pro
-                                </h1>
-                            </div>
-                            <div className="flex items-center flex-wrap gap-2">
-                                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-orange-900/20">
-                                    <span>📤</span> Upload
-                                </button>
-                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                                <div className="h-6 w-[1px] bg-gray-800 mx-1"></div>
-                                <button onClick={undo} disabled={historyIndex <= 0 || !image} className="p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition" title="Undo (Ctrl+Z)">↩️</button>
-                                <button onClick={redo} disabled={historyIndex >= history.length - 1 || !image} className="p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition" title="Redo (Ctrl+Y)">↪️</button>
-                                <button onClick={resetAllSettings} disabled={!image} className="px-3 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition">Reset</button>
-                            </div>
-                        </div>
+            return ( <
+                    div className = "min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8" >
+                    <
+                    div className = "glass w-full max-w-6xl rounded-3xl shadow-2xl border border-gray-800 flex flex-col overflow-hidden max-h-[94vh]" >
+                    { /* Warning banner */ } {
+                        warning && ( <
+                            div className = "px-6 py-2 bg-yellow-900/60 border-b border-yellow-700/50 text-yellow-200 text-xs flex justify-between items-center" >
+                            <
+                            span > ⚠️ { warning } < /span> <
+                            button onClick = {
+                                () => setWarning(null) }
+                            className = "text-yellow-300 ml-4 font-bold touch-target flex items-center justify-center" >
+                            ✕ < /button> <
+                            /div>
+                        )
+                    }
 
-                        {/* Main split */}
-                        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-                            {/* Canvas area */}
-                            <div className="lg:col-span-8 p-6 flex flex-col items-center justify-center bg-gray-950/50 relative overflow-hidden min-h-[320px]">
-                                {!image ? (
-                                    <div className="text-center max-w-sm px-4">
-                                        <div className="w-16 h-16 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 text-gray-400 shadow-inner">🖼️</div>
-                                        <h3 className="text-base font-semibold text-gray-200">No media asset active</h3>
-                                        <p className="text-gray-500 text-xs mt-1 mb-4 leading-relaxed">Import an image to unlock high‑fidelity filtering and adjustment engines.</p>
-                                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-orange-400 rounded-xl text-xs font-semibold transition">Browse Workspace Files</button>
-                                    </div>
-                                ) : (
-                                    <div className="canvas-container p-1 rounded-2xl shadow-2xl border border-gray-800 max-w-full max-h-[50vh] lg:max-h-[60vh] overflow-auto flex items-center justify-center">
-                                        <canvas ref={canvasRef} className="max-w-full max-h-[48vh] lg:max-h-[58vh] object-contain rounded-xl" />
-                                    </div>
-                                )}
-                            </div>
+                    { /* Header */ } <
+                    div className = "px-6 py-4 border-b border-gray-800 bg-gray-900/60 flex flex-wrap items-center justify-between gap-4" >
+                    <
+                    div className = "flex items-center gap-3" >
+                    <
+                    span className = "text-2xl" > 📸 < /span> <
+                    h1 className = "text-xl font-bold bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 bg-clip-text text-transparent tracking-tight" >
+                    Luminor Studio Pro <
+                    /h1> <
+                    /div> <
+                    div className = "flex items-center flex-wrap gap-2" >
+                    <
+                    button onClick = {
+                        () => fileInputRef.current?.click() }
+                    className = "touch-target px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-orange-900/20"
+                    aria-label = "Upload image" >
+                    <
+                    span > 📤 < /span> Upload <
+                    /button> <
+                    input ref = { fileInputRef }
+                    type = "file"
+                    accept = "image/png,image/jpeg,image/webp,image/bmp,image/tiff"
+                    onChange = { handleImageUpload }
+                    className = "hidden"
+                    aria-label = "File input" / >
+                    <
+                    div className = "h-6 w-[1px] bg-gray-800 mx-1" > < /div> <
+                    button onClick = { undo }
+                    disabled = { historyIndex <= 0 || !image || isProcessing }
+                    className = "touch-target p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition"
+                    title = "Undo (Ctrl+Z)"
+                    aria-label = "Undo" >
+                    ↩️ <
+                    /button> <
+                    button onClick = { redo }
+                    disabled = { historyIndex >= history.length - 1 || !image || isProcessing }
+                    className = "touch-target p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm transition"
+                    title = "Redo (Ctrl+Y)"
+                    aria-label = "Redo" >
+                    ↪️ <
+                    /button> <
+                    button onClick = { resetAllSettings }
+                    disabled = { !image || isProcessing }
+                    className = "touch-target px-3 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition" >
+                    Reset <
+                    /button> <
+                    /div> <
+                    /div>
 
-                            {/* Controls */}
-                            <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-gray-800 bg-gray-900/30 p-6 flex flex-col justify-between gap-6 overflow-y-auto">
-                                {image ? (
-                                    <div className="space-y-6">
-                                        {/* Tabs */}
-                                        <div className="bg-gray-950 p-1 rounded-xl border border-gray-800 grid grid-cols-3 gap-1">
-                                            {[{ id: "filters", label: "🎨 FX Matrix" }, { id: "adjust", label: "⚙️ Adjust" }, { id: "rotate", label: "📐 Geometry" }].map(tab => (
-                                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === tab.id ? "bg-orange-600 text-white shadow-md shadow-orange-900/10" : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"}`}>
-                                                    {tab.label}
-                                                </button>
-                                            ))}
-                                        </div>
+                    { /* Main split */ } <
+                    div className = "flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden" >
+                    { /* Canvas area */ } <
+                    div className = "lg:col-span-8 p-6 flex flex-col items-center justify-center bg-gray-950/50 relative overflow-hidden min-h-[320px]" >
+                    { !image ? ( <
+                            div className = "text-center max-w-sm px-4" >
+                            <
+                            div className = "w-16 h-16 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 text-gray-400 shadow-inner" >
+                            🖼️ <
+                            /div> <
+                            h3 className = "text-base font-semibold text-gray-200" > No media asset active < /h3> <
+                            p className = "text-gray-500 text-xs mt-1 mb-4 leading-relaxed" >
+                            Import an image to unlock high‑fidelity filtering and adjustment engines. <
+                            /p> <
+                            button onClick = {
+                                () => fileInputRef.current?.click() }
+                            className = "touch-target px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-orange-400 rounded-xl text-xs font-semibold transition" >
+                            Browse Workspace Files <
+                            /button> <
+                            /div>
+                        ) : ( <
+                            div className = "canvas-container p-1 rounded-2xl shadow-2xl border border-gray-800 max-w-full max-h-[50vh] lg:max-h-[60vh] overflow-auto flex items-center justify-center relative" >
+                            <
+                            canvas ref = { canvasRef }
+                            className = "max-w-full max-h-[48vh] lg:max-h-[58vh] object-contain rounded-xl" / >
+                            {
+                                isProcessing && ( <
+                                    div className = "absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl" >
+                                    <
+                                    div className = "spinner" > < /div> <
+                                    span className = "ml-3 text-sm text-white font-medium" > Processing… < /span> <
+                                    /div>
+                                )
+                            } {
+                                isLoading && ( <
+                                    div className = "absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl" >
+                                    <
+                                    div className = "spinner" > < /div> <
+                                    span className = "ml-3 text-sm text-white font-medium" > Loading… < /span> <
+                                    /div>
+                                )
+                            } <
+                            /div>
+                        )
+                    } <
+                    /div>
 
-                                        {/* Tab content */}
-                                        <div className="min-h-[220px]">
-                                            {activeTab === "filters" && (
-                                                <div className="grid grid-cols-2 gap-2 animate-fadeIn">
-                                                    {[
-                                                        { key: "grayscale", label: "⚫ Grayscale" },
-                                                        { key: "sepia", label: "🟫 Sepia" },
-                                                        { key: "invert", label: "🔲 Invert" },
-                                                        { key: "emboss", label: "🔨 Emboss FX" },
-                                                        { key: "sharpen", label: "✨ Sharpen" }
-                                                    ].map(f => (
-                                                        <button key={f.key} onClick={() => handleFilterToggle(f.key)} className={`p-3 rounded-xl border text-left text-xs font-medium transition-all flex flex-col justify-between gap-3 h-20 ${filters[f.key] ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}`}>
-                                                            <span className="text-base">{f.label.split(' ')[0]}</span>
-                                                            <span>{f.label.split(' ').slice(1).join(' ')}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
+                    { /* Controls */ } <
+                    div className = "lg:col-span-4 border-t lg:border-t-0 lg:border-l border-gray-800 bg-gray-900/30 p-6 flex flex-col justify-between gap-6 overflow-y-auto" >
+                    { image ? ( <
+                            div className = "space-y-6" >
+                            { /* Tabs */ } <
+                            div className = "bg-gray-950 p-1 rounded-xl border border-gray-800 grid grid-cols-3 gap-1" >
+                            { [{ id: "filters", label: "🎨 FX Matrix" }, { id: "adjust", label: "⚙️ Adjust" }, { id: "rotate",
+                                    label: "📐 Geometry" }
+                                ].map(tab => ( <
+                                    button key = { tab.id }
+                                    onClick = {
+                                        () => setActiveTab(tab.id) }
+                                    className = { `touch-target py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === tab.id ? "bg-orange-600 text-white shadow-md shadow-orange-900/10" : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"}` }
+                                    aria - label = { `Tab: ${tab.label}` } >
+                                    { tab.label } <
+                                    /button>
+                                ))
+                            } <
+                            /div>
 
-                                            {activeTab === "adjust" && (
-                                                <div className="space-y-4 animate-fadeIn">
-                                                    {[
-                                                        { key: "brightness", label: "Brightness", min: -100, max: 100, unit: "%" },
-                                                        { key: "contrast", label: "Contrast", min: -100, max: 100, unit: "%" },
-                                                        { key: "saturation", label: "Saturation", min: -100, max: 100, unit: "%" },
-                                                        { key: "blurRadius", label: "Blur Radius", min: 0, max: 20, unit: "px" }
-                                                    ].map(slider => (
-                                                        <div key={slider.key} className="space-y-2 bg-gray-950 p-3 rounded-xl border border-gray-800">
-                                                            <div className="flex justify-between text-xs font-semibold text-gray-400">
-                                                                <span>{slider.label}</span>
-                                                                <span className="text-orange-400 font-mono">{filters[slider.key] > 0 ? `+${filters[slider.key]}` : filters[slider.key]}{slider.unit}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range"
-                                                                min={slider.min}
-                                                                max={slider.max}
-                                                                value={filters[slider.key]}
-                                                                disabled={slider.key === "blurRadius" && (filters.emboss || filters.sharpen)}
-                                                                onChange={(e) => handleSliderChange(slider.key, Number(e.target.value))}
-                                                                onMouseUp={handleSliderCommit}
-                                                                onTouchEnd={handleSliderCommit}
-                                                                className="w-full accent-orange-500"
-                                                            />
-                                                            {slider.key === "blurRadius" && (filters.emboss || filters.sharpen) && (
-                                                                <p className="text-[10px] text-gray-500 italic">Blur disabled when Emboss or Sharpen is active</p>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                            { /* Tab content */ } <
+                            div className = "min-h-[220px]" >
+                            { activeTab === "filters" && ( <
+                                    div className = "grid grid-cols-2 gap-2 animate-fadeIn" >
+                                    <
+                                    FilterButton label = "Grayscale"
+                                    icon = "⚫"
+                                    active = { filters.grayscale }
+                                    onClick = {
+                                        () => handleFilterToggle('grayscale') }
+                                    ariaLabel = "Toggle grayscale filter" / >
+                                    <
+                                    FilterButton label = "Sepia"
+                                    icon = "🟫"
+                                    active = { filters.sepia }
+                                    onClick = {
+                                        () => handleFilterToggle('sepia') }
+                                    ariaLabel = "Toggle sepia filter" / >
+                                    <
+                                    FilterButton label = "Invert"
+                                    icon = "🔲"
+                                    active = { filters.invert }
+                                    onClick = {
+                                        () => handleFilterToggle('invert') }
+                                    ariaLabel = "Toggle invert filter" / >
+                                    <
+                                    FilterButton label = "Emboss FX"
+                                    icon = "🔨"
+                                    active = { filters.emboss }
+                                    onClick = {
+                                        () => handleFilterToggle('emboss') }
+                                    ariaLabel = "Toggle emboss filter" / >
+                                    <
+                                    FilterButton label = "Sharpen"
+                                    icon = "✨"
+                                    active = { filters.sharpen }
+                                    onClick = {
+                                        () => handleFilterToggle('sharpen') }
+                                    ariaLabel = "Toggle sharpen filter" / >
+                                    <
+                                    /div>
+                                )
+                            }
 
-                                            {activeTab === "rotate" && (
-                                                <div className="space-y-3 animate-fadeIn">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button onClick={() => handleGeometryTransform("rotateLeft")} className="p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center">↺ Rotate 90° L</button>
-                                                        <button onClick={() => handleGeometryTransform("rotateRight")} className="p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center">↻ Rotate 90° R</button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button onClick={() => handleGeometryTransform("flipH")} className={`p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipH ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}`}>↔ Flip Horizontal</button>
-                                                        <button onClick={() => handleGeometryTransform("flipV")} className={`p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipV ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}`}>↕ Flip Vertical</button>
-                                                    </div>
-                                                    <button onClick={() => handleGeometryTransform("clearGeometry")} className="w-full p-2 bg-gray-950 border border-dashed border-gray-800 hover:border-gray-700 text-gray-400 text-xs rounded-xl font-medium transition mt-2">Clear Geometric Transforms</button>
-                                                </div>
-                                            )}
-                                        </div>
+                            {
+                                activeTab === "adjust" && ( <
+                                    div className = "space-y-4 animate-fadeIn" >
+                                    <
+                                    SliderInput label = "Brightness"
+                                    value = { filters.brightness }
+                                    min = { -100 }
+                                    max = { 100 }
+                                    unit = "%"
+                                    onChange = {
+                                        (v) => handleSliderChange('brightness', v) }
+                                    onCommit = { handleSliderCommit }
+                                    disabled = { isProcessing }
+                                    ariaLabel = "Brightness slider" / >
+                                    <
+                                    SliderInput label = "Contrast"
+                                    value = { filters.contrast }
+                                    min = { -100 }
+                                    max = { 100 }
+                                    unit = "%"
+                                    onChange = {
+                                        (v) => handleSliderChange('contrast', v) }
+                                    onCommit = { handleSliderCommit }
+                                    disabled = { isProcessing }
+                                    ariaLabel = "Contrast slider" / >
+                                    <
+                                    SliderInput label = "Saturation"
+                                    value = { filters.saturation }
+                                    min = { -100 }
+                                    max = { 100 }
+                                    unit = "%"
+                                    onChange = {
+                                        (v) => handleSliderChange('saturation', v) }
+                                    onCommit = { handleSliderCommit }
+                                    disabled = { isProcessing }
+                                    ariaLabel = "Saturation slider" / >
+                                    <
+                                    SliderInput label = "Blur Radius"
+                                    value = { filters.blurRadius }
+                                    min = { 0 }
+                                    max = { 20 }
+                                    unit = "px"
+                                    onChange = {
+                                        (v) => handleSliderChange('blurRadius', v) }
+                                    onCommit = { handleSliderCommit }
+                                    disabled = { isProcessing || isBlurDisabled }
+                                    ariaLabel = "Blur radius slider" / >
+                                    <
+                                    /div>
+                                )
+                            }
 
-                                        {/* Export */}
-                                        <div className="pt-4 border-t border-gray-800 space-y-3">
-                                            <div className="flex gap-2">
-                                                <div className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 flex items-center justify-between">
-                                                    <span className="text-xs text-gray-400 font-medium">Extension Format</span>
-                                                    <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} className="bg-transparent text-xs text-orange-400 font-bold focus:outline-none cursor-pointer">
-                                                        <option value="png" className="bg-gray-900 text-gray-300">PNG (.png)</option>
-                                                        <option value="jpeg" className="bg-gray-900 text-gray-300">JPEG (.jpg)</option>
-                                                    </select>
-                                                </div>
-                                                <button onClick={exportAssetOutward} className="px-5 bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white font-semibold rounded-xl text-sm transition-all shadow-md flex items-center justify-center">Export Asset</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-center p-4">
-                                        <p className="text-gray-500 text-xs leading-relaxed italic">Upload an image asset to unlock studio configuration controls.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                            {
+                                activeTab === "rotate" && ( <
+                                    div className = "space-y-3 animate-fadeIn" >
+                                    <
+                                    div className = "grid grid-cols-2 gap-2" >
+                                    <
+                                    button onClick = {
+                                        () => handleGeometryTransform('rotateLeft') }
+                                    className = "touch-target p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center"
+                                    disabled = { isProcessing } >
+                                    ↺ Rotate 90° L <
+                                    /button> <
+                                    button onClick = {
+                                        () => handleGeometryTransform('rotateRight') }
+                                    className = "touch-target p-3 bg-gray-950 border border-gray-800 hover:border-gray-700 text-gray-300 rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center"
+                                    disabled = { isProcessing } >
+                                    ↻ Rotate 90° R <
+                                    /button> <
+                                    /div> <
+                                    div className = "grid grid-cols-2 gap-2" >
+                                    <
+                                    button onClick = {
+                                        () => handleGeometryTransform('flipH') }
+                                    className = { `touch-target p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipH ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}` }
+                                    disabled = { isProcessing } >
+                                    ↔ Flip Horizontal <
+                                    /button> <
+                                    button onClick = {
+                                        () => handleGeometryTransform('flipV') }
+                                    className = { `touch-target p-3 border rounded-xl text-xs font-medium transition flex items-center gap-2 justify-center ${filters.flipV ? "bg-orange-950/30 border-orange-500/50 text-orange-400" : "bg-gray-950 border-gray-800 text-gray-300 hover:border-gray-700"}` }
+                                    disabled = { isProcessing } >
+                                    ↕ Flip Vertical <
+                                    /button> <
+                                    /div> <
+                                    button onClick = {
+                                        () => handleGeometryTransform('clearGeometry') }
+                                    className = "touch-target w-full p-2 bg-gray-950 border border-dashed border-gray-800 hover:border-gray-700 text-gray-400 text-xs rounded-xl font-medium transition mt-2"
+                                    disabled = { isProcessing } >
+                                    Clear Geometric Transforms <
+                                    /button> <
+                                    /div>
+                                )
+                            } <
+                            /div>
 
-                        {/* Status bar */}
-                        {image && (
-                            <div className="px-6 py-2 border-t border-gray-800 bg-gray-950 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-500 font-mono">
-                                <div className="flex items-center gap-2">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span>Pipeline Stream Stable: Stage {historyIndex + 1} of {history.length}</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <span>Matrix Dimension Scope: {dimensions.width}px × {dimensions.height}px</span>
-                                    <span className="hidden md:inline">Hotkeys: Ctrl+Z (Undo) | Ctrl+Y (Redo) | Ctrl+S (Export)</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
+                            { /* Export */ } <
+                            div className = "pt-4 border-t border-gray-800 space-y-3" >
+                            <
+                            div className = "flex gap-2" >
+                            <
+                            div className = "flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 flex items-center justify-between" >
+                            <
+                            span className = "text-xs text-gray-400 font-medium" > Format < /span> <
+                            select value = { exportFormat }
+                            onChange = {
+                                (e) => setExportFormat(e.target.value) }
+                            className = "bg-transparent text-xs text-orange-400 font-bold focus:outline-none cursor-pointer"
+                            aria - label = "Export format" >
+                            <
+                            option value = "png"
+                            className = "bg-gray-900 text-gray-300" > PNG(.png) < /option> <
+                            option value = "jpeg"
+                            className = "bg-gray-900 text-gray-300" > JPEG(.jpg) < /option> <
+                            /select> <
+                            /div> <
+                            button onClick = { exportAssetOutward }
+                            disabled = { isProcessing }
+                            className = "touch-target px-5 bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white font-semibold rounded-xl text-sm transition-all shadow-md flex items-center justify-center" >
+                            Export <
+                            /button> <
+                            /div> <
+                            /div> <
+                            /div>
+                        ) : ( <
+                            div className = "h-full flex items-center justify-center text-center p-4" >
+                            <
+                            p className = "text-gray-500 text-xs leading-relaxed italic" >
+                            Upload an image asset to unlock studio configuration controls. <
+                            /p> <
+                            /div>
+                        )
+                    } <
+                    /div> <
+                    /div>
 
-        const root = ReactDOM.createRoot(document.getElementById("root"));
-        root.render(<LuminorStudioPro />);
+                    { /* Status bar */ } {
+                        image && ( <
+                            div className = "px-6 py-2 border-t border-gray-800 bg-gray-950 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-500 font-mono" >
+                            <
+                            div className = "flex items-center gap-2" >
+                            <
+                            span className = { `inline-block w-1.5 h-1.5 rounded-full ${isProcessing ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}` } > < /span> <
+                            span > { isProcessing ? 'Processing…' :
+                                    `Pipeline: Stage ${historyIndex + 1} of ${history.length}` } < /span> <
+                            /div> <
+                            div className = "flex items-center gap-4" >
+                            <
+                            span > { dimensions.width } px × { dimensions.height }
+                            px < /span> <
+                            span className = "hidden md:inline" > ⌘ Z↩ &nbsp;|&nbsp; ⌘ Y↪ &nbsp;|&nbsp; ⌘ S⬇ < /span> <
+                            /div> <
+                            /div>
+                        )
+                    } <
+                    /div> <
+                    /div>
+                );
+            }
+
+            const root = ReactDOM.createRoot(document.getElementById("root"));
+            root.render( < LuminorStudioPro / > );
     </script>
 </body>
 </html>
